@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Allocation Engine - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1f2937;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light-bg);
+        }
+
+        .sidebar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            min-height: 100vh;
+            position: fixed;
+            width: 250px;
+            z-index: 1000;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 5px 10px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            border: none;
+            border-radius: 10px;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color), #d97706);
+            border: none;
+            border-radius: 10px;
+        }
+
+        .badge {
+            border-radius: 20px;
+            padding: 8px 15px;
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            border-radius: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="p-3">
+            <h4 class="text-white mb-4">
+                <i class="fas fa-brain"></i> AI Engine
+            </h4>
+            
+            <!-- Navigation Links -->
+            <div class="mb-4">
+                <a href="/" class="btn btn-outline-light btn-sm w-100 mb-2">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="/candidate" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fas fa-user-graduate"></i> Candidate Portal
+                </a>
+            </div>
+            
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#dashboard" onclick="showSection('dashboard')">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#candidates" onclick="showSection('candidates')">
+                        <i class="fas fa-users"></i> Candidates
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#internships" onclick="showSection('internships')">
+                        <i class="fas fa-briefcase"></i> Internships
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#analytics" onclick="showSection('analytics')">
+                        <i class="fas fa-chart-bar"></i> Analytics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#settings" onclick="showSection('settings')">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navigation Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded shadow-sm">
+            <div>
+                <h4 class="mb-0 text-primary">
+                    <i class="fas fa-cog"></i> Admin Dashboard
+                </h4>
+            </div>
+            <div>
+                <a href="/" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="/candidate" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-user-graduate"></i> Candidate Portal
+                </a>
+            </div>
+        </div>
+        
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="content-section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-candidates">0</div>
+                        <div class="text-muted">Total Candidates</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-internships">0</div>
+                        <div class="text-muted">Available Internships</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="avg-match-score">0%</div>
+                        <div class="text-muted">Avg Match Score</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="diversity-rate">0%</div>
+                        <div class="text-muted">Diversity Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-chart-pie"></i> Sector Distribution</h5>
+                        <canvas id="sectorChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-chart-line"></i> Match Score Trends</h5>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="dashboard-card">
+                <h5><i class="fas fa-clock"></i> Recent Activity</h5>
+                <div id="recent-activity">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Candidates Section -->
+        <div id="candidates-section" class="content-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users"></i> Candidate Management</h2>
+                <button class="btn btn-success" onclick="showAddCandidateModal()">
+                    <i class="fas fa-plus"></i> Add Candidate
+                </button>
+            </div>
+
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Education</th>
+                                <th>Location</th>
+                                <th>Skills</th>
+                                <th>Diversity</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="candidates-table">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading candidates...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Internships Section -->
+        <div id="internships-section" class="content-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-briefcase"></i> Internship Management</h2>
+                <button class="btn btn-success" onclick="showAddInternshipModal()">
+                    <i class="fas fa-plus"></i> Add Internship
+                </button>
+            </div>
+
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Company</th>
+                                <th>Sector</th>
+                                <th>Location</th>
+                                <th>Capacity</th>
+                                <th>Stipend</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="internships-table">
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading internships...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics-section" class="content-section" style="display: none;">
+            <h2><i class="fas fa-chart-bar"></i> Analytics & Reports</h2>
+            
+            <div class="row">
+                <div class="col-md-8 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-chart-area"></i> Matching Performance</h5>
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-map-marker-alt"></i> Location Distribution</h5>
+                        <canvas id="locationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-graduation-cap"></i> Education Levels</h5>
+                        <canvas id="educationChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-users"></i> Diversity Metrics</h5>
+                        <canvas id="diversityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings-section" class="content-section" style="display: none;">
+            <h2><i class="fas fa-cog"></i> System Settings</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h5><i class="fas fa-sliders-h"></i> Matching Weights</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Skills Weight</label>
+                            <input type="range" class="form-range" id="skills-weight" min="0" max="50" value="30">
+                            <div class="d-flex justify-content-between">
+                                <span>0%</span>
+                                <span id="skills-value">30%</span>
+                                <span>50%</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location Weight</label>
+                            <input type="range" class="form-range" id="location-weight" min="0" max="30" value="20">
+                            <div class="d-flex justify-content-between">
+                                <span>0%</span>
+                                <span id="location-value">20%</span>
+                                <span>30%</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Education Weight</label>
+                            <input type="range" class="form-range" id="education-weight" min="0" max="30" value="20">
+                            <div class="d-flex justify-content-between">
+                                <span>0%</span>
+                                <span id="education-value">20%</span>
+                                <span>30%</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="updateWeights()">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h5><i class="fas fa-language"></i> Language Settings</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Default Language</label>
+                            <select class="form-select" id="default-language">
+                                <option value="en">English</option>
+                                <option value="hi">हिन्दी</option>
+                                <option value="ta">தமிழ்</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Supported Languages</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="lang-en" checked>
+                                <label class="form-check-label" for="lang-en">English</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="lang-hi" checked>
+                                <label class="form-check-label" for="lang-hi">हिन्दी</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="lang-ta" checked>
+                                <label class="form-check-label" for="lang-ta">தமிழ்</label>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="updateLanguageSettings()">
+                            <i class="fas fa-save"></i> Save Language Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="addCandidateModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Candidate</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCandidateForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="candidate-name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Education Level</label>
+                                <select class="form-select" id="candidate-education" required>
+                                    <option value="">Select Education</option>
+                                    <option value="Diploma">Diploma</option>
+                                    <option value="Bachelor">Bachelor's Degree</option>
+                                    <option value="Master">Master's Degree</option>
+                                    <option value="PhD">PhD</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Skills (comma-separated)</label>
+                                <input type="text" class="form-control" id="candidate-skills" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location</label>
+                                <select class="form-select" id="candidate-location" required>
+                                    <option value="">Select Location</option>
+                                    <option value="Bangalore">Bangalore</option>
+                                    <option value="Mumbai">Mumbai</option>
+                                    <option value="Delhi">Delhi</option>
+                                    <option value="Chennai">Chennai</option>
+                                    <option value="Hyderabad">Hyderabad</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sector Interests</label>
+                                <input type="text" class="form-control" id="candidate-sectors" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Social Category</label>
+                                <select class="form-select" id="candidate-social">
+                                    <option value="">Select Category</option>
+                                    <option value="General">General</option>
+                                    <option value="SC">SC</option>
+                                    <option value="ST">ST</option>
+                                    <option value="OBC">OBC</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="candidate-rural-pref">
+                                    <label class="form-check-label">Prefers Rural</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="candidate-rural-from">
+                                    <label class="form-check-label">From Rural Area</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="candidate-first-gen">
+                                    <label class="form-check-label">First Generation</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addCandidate()">Add Candidate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let sectorChart, trendChart, performanceChart, locationChart, educationChart, diversityChart;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            initializeCharts();
+        });
+
+        // Navigation functions
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Remove active class from all nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName + '-section').style.display = 'block';
+            
+            // Add active class to clicked nav link
+            event.target.classList.add('active');
+            
+            // Load section-specific data
+            if (sectionName === 'candidates') {
+                loadCandidates();
+            } else if (sectionName === 'internships') {
+                loadInternships();
+            } else if (sectionName === 'analytics') {
+                loadAnalytics();
+            }
+        }
+
+        // Dashboard functions
+        async function loadDashboardData() {
+            try {
+                const [candidatesRes, internshipsRes] = await Promise.all([
+                    fetch('/api/candidates'),
+                    fetch('/api/internships')
+                ]);
+                
+                const candidates = await candidatesRes.json();
+                const internships = await internshipsRes.json();
+                
+                if (candidates.success && internships.success) {
+                    updateDashboardStats(candidates.candidates, internships.internships);
+                    updateRecentActivity(candidates.candidates);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        function updateDashboardStats(candidates, internships) {
+            document.getElementById('total-candidates').textContent = candidates.length;
+            document.getElementById('total-internships').textContent = internships.length;
+            
+            // Calculate average match score (simulated)
+            const avgScore = Math.floor(Math.random() * 20) + 75; // 75-95%
+            document.getElementById('avg-match-score').textContent = avgScore + '%';
+            
+            // Calculate diversity rate
+            const diversityCount = candidates.filter(c => 
+                c.from_rural_area || c.social_category !== 'General' || c.first_generation_graduate
+            ).length;
+            const diversityRate = candidates.length > 0 ? Math.round((diversityCount / candidates.length) * 100) : 0;
+            document.getElementById('diversity-rate').textContent = diversityRate + '%';
+        }
+
+        function updateRecentActivity(candidates) {
+            const activityContainer = document.getElementById('recent-activity');
+            const recentCandidates = candidates.slice(-5).reverse();
+            
+            activityContainer.innerHTML = recentCandidates.map(candidate => `
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <div>
+                        <strong>${candidate.name}</strong> registered
+                        <small class="text-muted">- ${candidate.education_level} in ${candidate.location}</small>
+                    </div>
+                    <span class="badge bg-primary">New</span>
+                </div>
+            `).join('');
+        }
+
+        // Chart initialization
+        function initializeCharts() {
+            // Sector Distribution Chart
+            const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+            sectorChart = new Chart(sectorCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Technology', 'Finance', 'Healthcare', 'Marketing'],
+                    datasets: [{
+                        data: [40, 25, 20, 15],
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Trend Chart
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Avg Match Score',
+                        data: [78, 82, 85, 88, 86, 89],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Candidate management
+        async function loadCandidates() {
+            try {
+                const response = await fetch('/api/candidates');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const tbody = document.getElementById('candidates-table');
+                    tbody.innerHTML = data.candidates.map(candidate => `
+                        <tr>
+                            <td>${candidate.id}</td>
+                            <td>${candidate.name}</td>
+                            <td><span class="badge bg-info">${candidate.education_level}</span></td>
+                            <td>${candidate.location}</td>
+                            <td>${candidate.skills.slice(0, 2).join(', ')}${candidate.skills.length > 2 ? '...' : ''}</td>
+                            <td>
+                                ${candidate.from_rural_area ? '<span class="badge bg-success">Rural</span>' : ''}
+                                ${candidate.social_category !== 'General' ? '<span class="badge bg-warning">' + candidate.social_category + '</span>' : ''}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewCandidate(${candidate.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editCandidate(${candidate.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteCandidate(${candidate.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading candidates:', error);
+            }
+        }
+
+        // Internship management
+        async function loadInternships() {
+            try {
+                const response = await fetch('/api/internships');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const tbody = document.getElementById('internships-table');
+                    tbody.innerHTML = data.internships.map(internship => `
+                        <tr>
+                            <td>${internship.id}</td>
+                            <td>${internship.title}</td>
+                            <td>${internship.company}</td>
+                            <td><span class="badge bg-primary">${internship.sector}</span></td>
+                            <td>${internship.location}</td>
+                            <td><span class="badge bg-info">${internship.capacity}</span></td>
+                            <td>₹${internship.stipend.toLocaleString()}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewInternship(${internship.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editInternship(${internship.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteInternship(${internship.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading internships:', error);
+            }
+        }
+
+        // Modal functions
+        function showAddCandidateModal() {
+            new bootstrap.Modal(document.getElementById('addCandidateModal')).show();
+        }
+
+        function showAddInternshipModal() {
+            // Implementation for internship modal
+            alert('Add Internship modal would open here');
+        }
+
+        // Utility functions
+        function refreshData() {
+            loadDashboardData();
+            if (document.getElementById('candidates-section').style.display !== 'none') {
+                loadCandidates();
+            }
+            if (document.getElementById('internships-section').style.display !== 'none') {
+                loadInternships();
+            }
+        }
+
+        // Placeholder functions for future implementation
+        function addCandidate() {
+            alert('Add candidate functionality would be implemented here');
+        }
+
+        function viewCandidate(id) {
+            alert(`View candidate ${id} details`);
+        }
+
+        function editCandidate(id) {
+            alert(`Edit candidate ${id}`);
+        }
+
+        function deleteCandidate(id) {
+            if (confirm('Are you sure you want to delete this candidate?')) {
+                alert(`Delete candidate ${id}`);
+            }
+        }
+
+        function viewInternship(id) {
+            alert(`View internship ${id} details`);
+        }
+
+        function editInternship(id) {
+            alert(`Edit internship ${id}`);
+        }
+
+        function deleteInternship(id) {
+            if (confirm('Are you sure you want to delete this internship?')) {
+                alert(`Delete internship ${id}`);
+            }
+        }
+
+        function loadAnalytics() {
+            // Load analytics charts
+            alert('Analytics charts would be loaded here');
+        }
+
+        function updateWeights() {
+            alert('Matching weights would be updated here');
+        }
+
+        function updateLanguageSettings() {
+            alert('Language settings would be updated here');
+        }
+    </script>
+</body>
+</html>
+
