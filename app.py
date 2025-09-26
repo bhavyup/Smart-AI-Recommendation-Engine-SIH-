@@ -1193,28 +1193,28 @@ def get_analytics():
             candidates = [_C(c) for c in candidates_list]
 
             # Diversity metrics
-            diversity_candidates = sum(
+        diversity_candidates = sum(
                 1 for c in candidates
                 if getattr(c, 'from_rural_area', False) or
                 getattr(c, 'social_category', '') in ['SC', 'ST', 'OBC'] or
                 getattr(c, 'first_generation_graduate', False)
             )
-            diversity_rate = (
+        diversity_rate = (
                 diversity_candidates / total_candidates * 100) if total_candidates > 0 else 0
 
             # Location distribution
-            location_counts = {}
-            for c in candidates:
+        location_counts = {}
+        for c in candidates:
                 loc = getattr(c, 'location', 'Unknown')
                 location_counts[loc] = location_counts.get(loc, 0) + 1
 
             # Education distribution
-            education_counts = {}
-            for c in candidates:
+        education_counts = {}
+        for c in candidates:
                 edu = getattr(c, 'education_level', 'Unknown')
                 education_counts[edu] = education_counts.get(edu, 0) + 1
 
-            result = {
+        result = {
                 'total_candidates': total_candidates,
                 'total_internships': total_internships,
                 'diversity_rate': round(diversity_rate, 1),
@@ -1224,8 +1224,8 @@ def get_analytics():
             }
 
             # 3) Store and return
-            analytics_cache_set(result)
-            return jsonify({'success': True, 'analytics': result, 'cached': False})
+        analytics_cache_set(result)
+        return jsonify({'success': True, 'analytics': result, 'cached': False})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
