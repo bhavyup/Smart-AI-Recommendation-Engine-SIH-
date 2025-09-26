@@ -16,18 +16,40 @@ from pathlib import Path
 import json
 from datetime import datetime
 from werkzeug.utils import secure_filename
-
+from flask_compress import Compress
+import time
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+Compress(app)
 
 # Session secret and admin credentials (env-driven)
 app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(24)
 
 ADMIN_USER = os.environ.get('ADMIN_USER', 'admin')
 ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH')
+AN_CACHE = {'ts': 0, 'data': None}
+AN_TTL = int(os.environ.get('ANALYTICS_TTL', '20'))  # seconds
+
+
+def analytics_cache_get():
+    now = time.time()
+    if AN_CACHE['data'] is not None and (now - AN_CACHE['ts']) < AN_TTL:
+        return AN_CACHE['data']
+    return None
+
+
+def analytics_cache_set(payload):
+    AN_CACHE['data'] = payload
+    AN_CACHE['ts'] = time.time()
+
+
+def analytics_cache_clear():
+    AN_CACHE['data'] = None
+    AN_CACHE['ts'] = 0
+
 
 # Dev convenience: allow plain ADMIN_PASSWORD, convert to hash
 if not ADMIN_PASSWORD_HASH and os.environ.get('ADMIN_PASSWORD'):
@@ -923,6 +945,7 @@ def create_internship():
             )
             db.session.add(obj)
             db.session.commit()
+            analytics_cache_clear()
 
             with app.app_context():
                 load_db_into_engine()
@@ -987,6 +1010,7 @@ def update_internship(internship_id):
                 obj.diversity_focused = bool(norm['diversity_focused'])
 
             db.session.commit()
+            analytics_cache_clear()
             with app.app_context():
                 load_db_into_engine()
             write_snapshot_from_engine()
@@ -1036,6 +1060,7 @@ def delete_internship(internship_id):
                 return jsonify({'success': False, 'error': 'Not found'}), 404
             db.session.delete(obj)
             db.session.commit()
+            analytics_cache_clear()
             _shortlist_remove_internship(internship_id)
             with app.app_context():
                 load_db_into_engine()
@@ -1081,8 +1106,14 @@ def get_translations(language_code):
 
 @app.route('/api/analytics')
 def get_analytics():
-    """Get analytics data for dashboard (DB/SQLite/File)"""
+    """Get analytics data for dashboard (DB/SQLite/File) with TTL cache."""
     try:
+        # 1) Serve from cache if fresh
+        cached = analytics_cache_get()
+        if cached is not None:
+            return jsonify({'success': True, 'analytics': cached, 'cached': True})
+
+            # 2) Compute fresh analytics
         if PERSISTENCE_MODE in ('db', 'sqlite'):
             total_candidates = Candidate.query.count()
             total_internships = Internship.query.count()
@@ -1101,37 +1132,34 @@ def get_analytics():
                 sector_counts[i['sector']] = sector_counts.get(
                     i['sector'], 0) + 1
 
-            # Convert list of dicts to objects-like for uniform processing below
             class _C:
                 def __init__(self, d): self.__dict__ = d
                 def __getattr__(self, k): return self.__dict__.get(k)
             candidates = [_C(c) for c in candidates_list]
 
-        # Diversity metrics
-        diversity_candidates = sum(
-            1 for c in candidates
-            if getattr(c, 'from_rural_area', False) or
-            getattr(c, 'social_category', '') in ['SC', 'ST', 'OBC'] or
-            getattr(c, 'first_generation_graduate', False)
-        )
-        diversity_rate = (diversity_candidates /
-                          total_candidates * 100) if total_candidates > 0 else 0
+            # Diversity metrics
+            diversity_candidates = sum(
+                1 for c in candidates
+                if getattr(c, 'from_rural_area', False) or
+                getattr(c, 'social_category', '') in ['SC', 'ST', 'OBC'] or
+                getattr(c, 'first_generation_graduate', False)
+            )
+            diversity_rate = (
+                diversity_candidates / total_candidates * 100) if total_candidates > 0 else 0
 
-        # Location distribution
-        location_counts = {}
-        for c in candidates:
-            loc = getattr(c, 'location', 'Unknown')
-            location_counts[loc] = location_counts.get(loc, 0) + 1
+            # Location distribution
+            location_counts = {}
+            for c in candidates:
+                loc = getattr(c, 'location', 'Unknown')
+                location_counts[loc] = location_counts.get(loc, 0) + 1
 
-        # Education distribution
-        education_counts = {}
-        for c in candidates:
-            edu = getattr(c, 'education_level', 'Unknown')
-            education_counts[edu] = education_counts.get(edu, 0) + 1
+            # Education distribution
+            education_counts = {}
+            for c in candidates:
+                edu = getattr(c, 'education_level', 'Unknown')
+                education_counts[edu] = education_counts.get(edu, 0) + 1
 
-        return jsonify({
-            'success': True,
-            'analytics': {
+            result = {
                 'total_candidates': total_candidates,
                 'total_internships': total_internships,
                 'diversity_rate': round(diversity_rate, 1),
@@ -1139,7 +1167,10 @@ def get_analytics():
                 'location_distribution': location_counts,
                 'education_distribution': education_counts
             }
-        })
+
+            # 3) Store and return
+            analytics_cache_set(result)
+            return jsonify({'success': True, 'analytics': result, 'cached': False})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1205,6 +1236,7 @@ def add_candidate():
             db.session.add(candidate)
             db.session.commit()
             candidate_id = candidate.id
+            analytics_cache_clear()
 
             # Sync memory and backup to file
             with app.app_context():
@@ -1326,6 +1358,7 @@ def update_candidate_by_email():
                     data['first_generation_graduate'])
 
             db.session.commit()
+            analytics_cache_clear()
             # Sync to engine and snapshot for fallbacks
             with app.app_context():
                 load_db_into_engine()
@@ -1395,6 +1428,7 @@ def admin_update_candidate(candidate_id):
                 obj.first_generation_graduate = bool(
                     payload['first_generation_graduate'])
             db.session.commit()
+            analytics_cache_clear()
             with app.app_context():
                 load_db_into_engine()
             write_snapshot_from_engine()
@@ -1441,6 +1475,7 @@ def admin_delete_candidate(candidate_id):
                 return jsonify({'success': False, 'error': 'Candidate not found'}), 404
             db.session.delete(obj)
             db.session.commit()
+            analytics_cache_clear()
             with app.app_context():
                 load_db_into_engine()
             write_snapshot_from_engine()
@@ -1568,6 +1603,7 @@ def admin_import_csv():
         if mode not in ('append', 'replace'):
             return jsonify({'success': False, 'error': 'mode must be append or replace'}), 400
         cnt = _import_csv_to_db(path, mode)
+        analytics_cache_clear()
         if path == CSV_PATH:
             sig = _file_signature(path)
             if sig:
@@ -1597,6 +1633,7 @@ def admin_upload_csv():
         f.save(save_path)
 
         cnt = _import_csv_to_db(save_path, mode)
+        analytics_cache_clear()
         return jsonify({'success': True, 'imported': cnt, 'mode': mode, 'path': save_path})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
