@@ -8,7 +8,7 @@ import uuid
 import joblib
 from smart_allocation_engine import SmartAllocationEngine
 from language_support import LanguageSupport
-from models import db, Candidate, Internship
+from models import db, Candidate, Internship, Shortlist
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import create_engine, text, inspect
 from dotenv import load_dotenv
@@ -296,32 +296,69 @@ def _write_shortlist_file(entries: list):
 
 
 def _shortlist_add(email: str, internship_id: int):
+    e = (email or '').strip().lower()
+    iid = int(internship_id)
+    if PERSISTENCE_MODE in ('db', 'sqlite'):
+        existing = Shortlist.query.filter_by(
+            email=e, internship_id=iid).first()
+        if existing:
+            return 'exists'
+        db.session.add(Shortlist(email=e, internship_id=iid))
+        db.session.commit()
+        return 'added'
+    # FILE fallback
     entries = _read_shortlist_file()
-    key = (email.strip().lower(), int(internship_id))
-    if any((e.get('email', '').lower(), int(e.get('internship_id', 0))) == key for e in entries):
+    if any((x.get('email', '').lower(), int(x.get('internship_id', 0))) == (e, iid) for x in entries):
         return 'exists'
-    entries.append({
-        'email': email.strip(),
-        'internship_id': int(internship_id),
-        'created_at': datetime.utcnow().isoformat() + 'Z'
-    })
+    entries.append({'email': e, 'internship_id': iid,
+                   'created_at': datetime.utcnow().isoformat() + 'Z'})
     _write_shortlist_file(entries)
     return 'added'
 
 
 def _shortlist_remove(email: str, internship_id: int):
+    e = (email or '').strip().lower()
+    iid = int(internship_id)
+    if PERSISTENCE_MODE in ('db', 'sqlite'):
+        obj = Shortlist.query.filter_by(email=e, internship_id=iid).first()
+        if not obj:
+            return 'not_found'
+        db.session.delete(obj)
+        db.session.commit()
+        return 'removed'
+    # FILE fallback
     entries = _read_shortlist_file()
     before = len(entries)
-    key = (email.strip().lower(), int(internship_id))
-    entries = [e for e in entries if (
-        e.get('email', '').lower(), int(e.get('internship_id', 0))) != key]
+    entries = [x for x in entries if (
+        x.get('email', '').lower(), int(x.get('internship_id', 0))) != (e, iid)]
     _write_shortlist_file(entries)
     return 'removed' if len(entries) < before else 'not_found'
 
 
 def _shortlist_ids(email: str):
-    email_l = (email or '').strip().lower()
-    return [int(e.get('internship_id', 0)) for e in _read_shortlist_file() if (e.get('email', '').lower() == email_l)]
+    e = (email or '').strip().lower()
+    if PERSISTENCE_MODE in ('db', 'sqlite'):
+        return [s.internship_id for s in Shortlist.query.filter_by(email=e).all()]
+    # FILE fallback
+    return [int(x.get('internship_id', 0)) for x in _read_shortlist_file() if (x.get('email', '').lower() == e)]
+
+
+def _shortlist_remove_internship(internship_id: int):
+    iid = int(internship_id)
+    if PERSISTENCE_MODE in ('db', 'sqlite'):
+        try:
+            Shortlist.query.filter_by(internship_id=iid).delete()
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        return
+    # FILE fallback
+    try:
+        entries = _read_shortlist_file()
+        entries = [e for e in entries if int(e.get('internship_id', 0)) != iid]
+        _write_shortlist_file(entries)
+    except Exception:
+        pass
 
 
 def _parse_bool(x):
@@ -377,16 +414,33 @@ def _normalize_internship_payload(data: dict, partial: bool = False):
     return norm
 
 
-def _shortlist_remove_internship(internship_id: int):
+def migrate_shortlist_file_to_db():
+    """One-time import from data/shortlist.json into DB if table is empty."""
     try:
+        if PERSISTENCE_MODE not in ('db', 'sqlite'):
+            return
+        count = db.session.execute(
+            text("SELECT COUNT(*) FROM shortlist")).scalar() or 0
+        if count > 0:
+            return
         entries = _read_shortlist_file()
-        before = len(entries)
-        entries = [e for e in entries if int(
-            e.get('internship_id', 0)) != int(internship_id)]
-        if len(entries) != before:
-            _write_shortlist_file(entries)
-    except Exception:
-        pass
+        added = 0
+        for e in entries:
+            email = (e.get('email') or '').strip().lower()
+            try:
+                iid = int(e.get('internship_id', 0))
+            except Exception:
+                continue
+            if not email or not iid:
+                continue
+            if not Shortlist.query.filter_by(email=email, internship_id=iid).first():
+                db.session.add(Shortlist(email=email, internship_id=iid))
+                added += 1
+        if added:
+            db.session.commit()
+            print(f"🧩 Migrated {added} shortlist entries from file to DB.")
+    except Exception as ex:
+        print(f"⚠️  Shortlist migration skipped: {ex}")
 
 
 def load_db_into_engine():
@@ -709,6 +763,7 @@ if PERSISTENCE_MODE in ('db', 'sqlite'):
             # Ensure schema supports uid and backfill
             ensure_uid_column_and_index()
             ensure_email_unique_index()
+            migrate_shortlist_file_to_db()
             # Import from snapshot to ensure DB is never behind file
             sync_from_file_to_active_db()
             auto_import_csv_if_changed()

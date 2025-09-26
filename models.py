@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import func
 
 db = SQLAlchemy()
 
@@ -66,3 +67,19 @@ class Internship(db.Model):
             'rural_friendly': bool(self.rural_friendly),
             'diversity_focused': bool(self.diversity_focused),
         }
+
+
+class Shortlist(db.Model):
+    __tablename__ = 'shortlist'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), nullable=False,
+                      index=True)  # store lowercase
+    internship_id = db.Column(db.Integer, db.ForeignKey(
+        'internships.id', ondelete='CASCADE'), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True),
+                           server_default=func.now())
+
+    __table_args__ = (
+        db.UniqueConstraint('email', 'internship_id',
+                            name='uq_shortlist_email_internship'),
+    )
