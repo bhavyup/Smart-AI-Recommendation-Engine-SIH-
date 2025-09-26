@@ -1,826 +1,2869 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Smart Allocation Engine - Admin Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>AI Smart Allocation Engine • Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="/static/js/i18n.js"></script>
+
     <style>
         :root {
-            --primary-color: #2563eb;
-            --secondary-color: #1e40af;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --dark-color: #1f2937;
-            --light-bg: #f8fafc;
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --bg1: #1f2937;
+            --bg2: #0f172a;
+            --primary: #2563eb;
+            --primary-2: #1e40af;
+            --accent: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --muted: #94a3b8;
+            --muted2: #cbd5e1;
+            --glass-border: rgba(148, 163, 184, 0.22);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --soft-bg: rgba(255, 255, 255, 0.05);
+            --glass-strong: rgba(255, 255, 255, 0.10);
+            --glass-text: rgba(15, 20, 25, 0.95);
+            --cell-text: rgba(200, 206, 212, 0.85);
+            --glass-muted: rgba(15, 20, 25, 0.45);
+            --accent-2: #7c3aed;
+            --pill-padding: 0.25rem 0.6rem;
+            --pill-radius: 12px;
+            --btn-size: 36px;
+            --header-blur: 8px;
+            --body-blur: 1px;
+            --table-radius: 12px;
+            --row-hover: rgba(14, 165, 233, 0.06);
+            --shadow: 0 6px 24px rgba(11, 20, 30, 0.24);
+            --bg-accent-1: #0ea5e9;
+            --bg-accent-2: #7c3aed;
+            --bg-accent-3: #16a34a;
+            --bg-base-1: #071128;
+            --bg-base-2: #0b2a3a;
+            --bg-overlay-opacity: 0.26;
+            --bg-blur: 40px;
+            --node-size-large: 1200px 800px;
+            --node-size-med: 800px 700px;
+            --node-size-small: 600px 500px;
+            --drift-duration: 28s;
+            --drift-ease: ease-in-out;
+            --noise-opacity: 0.06;
+            --vignette-opacity: 0.45;
+            --bs-modal-footer-border-color: #212b36;
+        }
+
+
+        .bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            min-height: 100vh;
+            pointer-events: none;
+            overflow: hidden;
+            background:
+                linear-gradient(135deg, var(--bg-base-1) 0%, var(--bg-base-2) 100%);
+            isolation: isolate;
+        }
+
+        /* gradient "nodes" layers: use pseudo elements for independent transforms */
+        .bg::before,
+        .bg::after,
+        .bg .node {
+            content: "";
+            position: absolute;
+            filter: blur(var(--bg-blur));
+            transform-origin: center;
+            will-change: transform, opacity;
+            mix-blend-mode: screen;
+            opacity: 0.95;
+        }
+
+        /* Node 1 (left-top cyan) */
+        .bg::before {
+            width: var(--node-size-large);
+            height: 700px;
+            left: -10%;
+            top: -10%;
+            border-radius: 50%;
+            background: radial-gradient(closest-side, rgba(14, 165, 233, 0.95) 0%, rgba(14, 165, 233, 0.22) 30%, transparent 70%);
+            animation: drift1 var(--drift-duration) var(--drift-ease) infinite;
+            z-index: -2;
+        }
+
+        /* Node 2 (right-bottom green) */
+        .bg::after {
+            width: var(--node-size-large);
+            height: 900px;
+            right: -8%;
+            bottom: -12%;
+            border-radius: 50%;
+            background: radial-gradient(closest-side, rgba(34, 197, 94, 0.95) 0%, rgba(34, 197, 94, 0.18) 35%, transparent 72%);
+            animation: drift2 calc(var(--drift-duration) * 1.2) var(--drift-ease) infinite;
+            z-index: -2;
+        }
+
+        /* Extra small purple node (separate element in DOM recommended; fallback using pseudo if not) */
+        .bg .node {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            right: 10%;
+            top: 5%;
+            border-radius: 50%;
+            background: radial-gradient(closest-side, rgba(124, 58, 237, 0.95) 0%, rgba(124, 58, 237, 0.18) 30%, transparent 72%);
+            animation: drift3 calc(var(--drift-duration) * 0.9) var(--drift-ease) infinite;
+            z-index: -2;
+        }
+
+        /* glass overlay: subtle tinted overlay + frosted blur to make UI pop */
+        .bg .overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0, 0, 0, var(--bg-overlay-opacity)), rgba(0, 0, 0, 0.12));
+            backdrop-filter: blur(8px) saturate(1.05);
+            -webkit-backdrop-filter: blur(8px) saturate(1.05);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+
+        .bg .vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, var(--vignette-opacity)) 100%);
+            mix-blend-mode: multiply;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* subtle noise texture overlay using base64 SVG — keeps filesize small */
+        .bg .noise {
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.03'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.06' /></svg>");
+            opacity: var(--noise-opacity);
+            mix-blend-mode: overlay;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* small animated sparkles (optional) — purely decorative */
+        .bg .spark {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.4) 30%, transparent 70%);
+            border-radius: 50%;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 18px rgba(255, 255, 255, 0.06);
+            opacity: 0.9;
+            transform: translate3d(0, 0, 0);
+            mix-blend-mode: screen;
+            animation: float 8s ease-in-out infinite;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+
+        @keyframes drift1 {
+            0% {
+                transform: translate3d(-2%, -1%, 0) scale(1);
+            }
+
+            50% {
+                transform: translate3d(3%, 2%, 0) scale(1.02);
+            }
+
+            100% {
+                transform: translate3d(-2%, -1%, 0) scale(1);
+            }
+        }
+
+        @keyframes drift2 {
+            0% {
+                transform: translate3d(1%, 2%, 0) scale(1);
+            }
+
+            50% {
+                transform: translate3d(-3%, -2%, 0) scale(1.03);
+            }
+
+            100% {
+                transform: translate3d(1%, 2%, 0) scale(1);
+            }
+        }
+
+        @keyframes drift3 {
+            0% {
+                transform: translate3d(0%, -1%, 0) scale(1);
+            }
+
+            50% {
+                transform: translate3d(2%, 3%, 0) scale(1.01);
+            }
+
+            100% {
+                transform: translate3d(0%, -1%, 0) scale(1);
+            }
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) scale(.9);
+                opacity: .9;
+            }
+
+            50% {
+                transform: translateY(-24px) scale(1.02);
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: translateY(0) scale(.9);
+                opacity: .9;
+            }
+        }
+
+        /* OPTIONAL: helper to position spark elements via inline styles */
+        .bg .spark.is-1 {
+            left: 12%;
+            top: 40%;
+            animation-delay: 1s;
+        }
+
+        .bg .spark.is-2 {
+            left: 26%;
+            top: 18%;
+            animation-delay: 2s;
+        }
+
+        .bg .spark.is-3 {
+            left: 62%;
+            top: 12%;
+            animation-delay: 4s;
+        }
+
+        .bg .spark.is-4 {
+            left: 76%;
+            top: 46%;
+            animation-delay: 1s;
+        }
+
+        .bg .spark.is-5 {
+            left: 84%;
+            top: 72%;
+            animation-delay: 3s;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        html::-webkit-scrollbar {
+            display: none;
+        }
+
+        html {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--light-bg);
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100svh;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px) saturate(140%);
+            -webkit-backdrop-filter: blur(14px) saturate(140%);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
         }
 
         .sidebar {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            min-height: 100vh;
             position: fixed;
-            width: 250px;
+            inset: 0 auto 0 0;
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 18px 14px;
             z-index: 1000;
+            border-right: 1px solid var(--glass-border);
         }
 
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin: 5px 10px;
-            transition: all 0.3s ease;
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(59, 130, 246, 0.12));
+            font-weight: 800;
+            letter-spacing: .2px;
+            color: #e2e8f0;
         }
 
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
+        .nav-link {
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid transparent;
         }
 
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
+        .nav-link:hover {
+            background: rgba(148, 163, 184, 0.10);
         }
 
-        .dashboard-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 20px;
-            border-left: 5px solid var(--primary-color);
+        .nav-link.active {
+            background: rgba(37, 99, 235, 0.16);
+            border-color: rgba(37, 99, 235, 0.35);
         }
 
-        .stat-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: var(--card-shadow);
-            transition: transform 0.3s ease;
+        .content-wrap {
+            margin-left: 260px;
+            padding: 18px;
+            min-height: 100svh;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
-        .stat-card:hover {
-            transform: translateY(-5px);
+
+        .sidebar.collapsed {
+            width: 72px;
         }
 
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
+        .sidebar.collapsed .brand {
+            justify-content: center;
         }
 
-        .chart-container {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 20px;
+        .sidebar.collapsed .brand .brand-text {
+            display: none;
         }
 
-        .table-container {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: var(--card-shadow);
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .sidebar.collapsed .nav-link i {
+            margin-right: 0;
+        }
+
+        .sidebar.collapsed .nav-link .nav-text {
+            display: none;
+        }
+
+
+        .sidebar.collapsed+.content-wrap {
+            margin-left: 72px;
+        }
+
+
+        .sidebar,
+        .content-wrap {
+            transition: width .18s ease, margin-left .18s ease;
+        }
+
+        .topbar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(59, 130, 246, 0.10));
+            border: 1px solid var(--glass-border);
+            overflow: hidden;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat {
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            justify-content: space-between;
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat .num {
+            font-weight: 900;
+            font-size: 1.8rem;
+            color: #93c5fd;
+        }
+
+        .stat .lbl {
+            color: #cbd5e1;
+        }
+
+        .panel {
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--glass-border);
+            overflow: hidden;
+        }
+
+        .analytics-grid .panel {
+            margin-bottom: 0;
+        }
+
+        .panel h5 {
+            margin: 0 0 10px 0;
+            font-weight: 800;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            background: linear-gradient(135deg, var(--primary), var(--primary-2));
             border: none;
             border-radius: 10px;
-            padding: 10px 20px;
+            font-weight: 800;
+        }
+
+        .btn-outline-light {
+            border-radius: 10px;
+        }
+
+        .badge-soft {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(148, 163, 184, 0.12);
+            color: #e2e8f0;
+            font-weight: 700;
+            font-size: .83rem;
+
+            /* truncation so long strings don’t overflow rows */
+            max-width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .form-control,
+        .form-select {
+            background: rgba(15, 23, 42, 0.35);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            color: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        .searchbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .toast-container {
+            z-index: 1080;
+        }
+
+        .modal-glass .modal-content {
+            background: rgba(15, 23, 42, 0.85);
+            color: #e2e8f0;
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            backdrop-filter: blur(16px) saturate(140%);
+            -webkit-backdrop-filter: blur(16px) saturate(140%);
+        }
+
+        .modal-glass .modal-header {
+            border-radius: 16px 16px 0 0;
+            border-bottom: 1px solid var(--glass-border);
+            background: linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(59, 130, 246, 0.12));
+        }
+
+        .modal-glass .modal-footer {
+            border-radius: 0 0 16px 16px;
+            border-top: 1px solid var(--glass-border);
+            background: linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(59, 130, 246, 0.12));
+        }
+
+
+        .table-ressponsive {
+            padding: 14px;
+            border-radius: calc(var(--table-radius) + 6px);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.00));
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+
+        .glass-table {
+            border-collapse: separate;
+            width: 100%;
+            min-width: 800px;
+
+            background: transparent;
+            color: var(--glass-text);
+            overflow: hidden;
+            border-radius: var(--table-radius);
+        }
+
+
+        .glass-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+            backdrop-filter: blur(var(--header-blur));
+            -webkit-backdrop-filter: blur(var(--header-blur));
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--glass-border);
             font-weight: 600;
+            color: var(--glass-text);
+            text-align: center;
         }
 
-        .btn-success {
-            background: linear-gradient(135deg, var(--success-color), #059669);
+
+        .glass-table td {
+            padding: 4px 6px;
+            text-align: center;
+            vertical-align: middle;
             border: none;
-            border-radius: 10px;
+            background: transparent;
+            color: var(--cell-text);
+            font-size: 0.95rem;
         }
 
-        .btn-warning {
-            background: linear-gradient(135deg, var(--warning-color), #d97706);
+        .table td {
+            padding: 4px 6px;
+            text-align: center;
+            vertical-align: middle;
             border: none;
-            border-radius: 10px;
+            background: rgba(128, 128, 128, 0.059);
+            color: var(--cell-text);
+            font-size: 0.95rem;
         }
 
-        .badge {
-            border-radius: 20px;
-            padding: 8px 15px;
+
+        .glass-table td.text-muted {
+            color: var(--glass-muted);
+            font-style: italic;
         }
 
-        .progress {
-            height: 8px;
-            border-radius: 10px;
+
+        .glass-table tbody tr+tr td {
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
         }
 
-        .progress-bar {
+
+        .glass-table.table-hoover tbody tr:hover {
+            background: linear-gradient(90deg, var(--row-hover), rgba(0, 0, 0, 0));
+            transform: translateZ(0);
+            transition: background .18s ease, transform .12s ease;
+        }
+
+        /* highlight selected row (Bootstrap .table-active compatibility) */
+        .glass-table tbody tr.selected {
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.08), rgba(124, 58, 237, 0.02));
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.92);
+        }
+
+
+        .glass-table tbody td:first-child {
+            font-weight: 600;
+            color: var(--glass-text);
+            width: 70px;
+        }
+
+        /* EMAIL column – make overflow ellipsis */
+        .glass-table td:nth-child(3),
+        .glass-table td:nth-child(6) {
+            max-width: 220px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+
+        .glass-badge {
+            display: inline-block;
+            padding: var(--pill-padding);
+            border-radius: var(--pill-radius);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #073642;
+            background: rgba(255, 255, 255, 0.88);
+            box-shadow: 0 3px 10px rgba(2, 6, 23, 0.06);
+            margin-right: 6px;
+            vertical-align: middle;
+            justify-items: center;
+        }
+
+        .glass-table td:nth-child(7) {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 14px 16px;
+            min-height: 48px;
+            box-sizing: border-box;
+        }
+
+        /* convert plain small text tokens inside Diversity cell to pill-like */
+        .glass-table td:nth-child(7)>span,
+        .glass-table td:nth-child(7)>div>span {
+            margin-right: 6px;
+            padding: 4px 8px;
             border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            display: inline-block;
+        }
+
+        .table-hover td:nth-child(7) {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 16px;
+            min-height: 48px;
+            box-sizing: border-box;
+        }
+
+        /* convert plain small text tokens inside Diversity cell to pill-like */
+        .table-hover td:nth-child(7)>span,
+        .table-hover td:nth-child(7)>div>span {
+            margin-right: 6px;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            display: inline-block;
+        }
+
+        /* Diversity small colored pills — variants */
+        .badge--green {
+            background: linear-gradient(180deg, rgba(220, 255, 228, 0.9), rgba(205, 245, 215, 0.9));
+            color: #1b5e20;
+            border: 1px solid rgba(30, 150, 71, 0.08);
+        }
+
+        .badge--yellow {
+            background: linear-gradient(180deg, rgba(255, 249, 220, 0.95), rgba(255, 245, 210, 0.95));
+            color: #6b4b00;
+            border: 1px solid rgba(200, 170, 0, 0.06);
+        }
+
+        .badge--blue {
+            background: linear-gradient(180deg, rgba(225, 235, 255, 0.95), rgba(215, 225, 255, 0.95));
+            color: #10316b;
+            border: 1px solid rgba(60, 100, 200, 0.06);
+        }
+
+        /* small compact pill when you don't add classes — style inline text fallback */
+        .glass-table td .pill {
+            padding: 4px 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--glass-text);
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        /* Actions column — icon-style buttons (transparent, stroke, hover) */
+        .icon-btn {
+            width: var(--btn-size);
+            height: var(--btn-size);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: transparent;
+            margin-left: 6px;
+            transition: background .14s ease, transform .08s ease, box-shadow .08s ease;
+            cursor: pointer;
+            color: var(--glass-text);
+        }
+
+
+        .icon-btn.edit {
+            border-color: rgba(250, 204, 21, 0.32);
+        }
+
+        .icon-btn.edit:hover {
+            background: rgba(250, 204, 21, 0.32);
+            transform: translateY(-2px);
+            border: none;
+            box-shadow: 0 0 18px rgba(250, 204, 21, 0.12);
+        }
+
+        .icon-btn.delete {
+            border-color: rgba(244, 63, 94, 0.32);
+        }
+
+        .icon-btn.delete:hover {
+            background: rgba(244, 63, 94, 0.32);
+            transform: translateY(-2px);
+            border: none;
+            box-shadow: 0 0 18px rgba(244, 63, 94, 0.12);
+        }
+
+        .icon-btn.view {
+            border-color: rgba(100, 116, 139, 0.30);
+        }
+
+        .icon-btn.view:hover {
+            background: rgba(100, 116, 139, 0.30);
+            transform: translateY(-2px);
+            border: none;
+            box-shadow: 0 0 18px rgba(100, 116, 139, 0.12);
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(8, 13, 20, 0.12);
+        }
+
+        /* circle-outline style for "eye" / view icon */
+        .icon-btn.circle {
+            border-radius: 50%;
+        }
+
+
+        .icon-btn svg,
+        .icon-btn i {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+
+        .glass-table tbody tr.loading td {
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.00));
+            color: var(--glass-muted);
+        }
+
+
+        .icon-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+        }
+
+        /* final polish: remove default bootstrap borders */
+        .glass-table.table th,
+        .glass-table.table td {
+            border-top: none;
+            border-bottom: none;
+        }
+
+        .input-cand {
+            width: 40%;
+            border-radius: 12px;
+            background: transparent;
+            backdrop-filter: blur(14px) saturate(140%);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            padding: 2px 4px;
+            text-align: left;
+            vertical-align: middle;
+            color: #bbbec2;
+        }
+
+        .input-cand:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+            border-color: rgba(37, 99, 235, 0.35);
+            background: rgba(15, 23, 42, 0.45);
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .input-intern {
+            width: 60%;
+            border-radius: 12px;
+            background: transparent;
+            backdrop-filter: blur(14px) saturate(140%);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            padding: 2px 4px;
+            text-align: left;
+            vertical-align: middle;
+            color: #bbbec2;
+        }
+
+        .input-intern:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+            border-color: rgba(37, 99, 235, 0.35);
+            background: rgba(15, 23, 42, 0.45);
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .btn-filter {
+            width: 10%;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-2));
+            border: none;
+            color: #ffffff;
+            font-weight: 600;
+            padding: 6px 12px;
+            transition: background .48s ease-in-out, color .48s ease-in-out, box-shadow .48s ease-in-out;
+        }
+
+        .btn-filter:hover {
+            color: var(--primary);
+            background: white;
+            border: none;
+            box-shadow: 0 0 10px rgba(97, 106, 237, 0.547);
+        }
+
+        .btn-reset {
+            width: 10%;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--danger), var(--danger));
+            border: none;
+            color: #ffffff;
+            font-weight: 600;
+            padding: 6px 12px;
+            transition: background .48s ease-in-out, color .48s ease-in-out, box-shadow .48s ease-in-out;
+        }
+
+        .btn-reset:hover {
+            color: var(--danger);
+            background: white;
+            border: none;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.547);
+        }
+
+        #imSkills .badge-soft {
+            margin: 0 6px 6px 0;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .analytics-left {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .analytics-right {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #btnSidebarToggle {
+            display: none;
+        }
+
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .bg::before,
+            .bg::after,
+            .bg .node,
+            .bg .spark {
+                animation: none !important;
+                transition: none !important;
+            }
         }
 
         @media (max-width: 768px) {
             .sidebar {
+                position: fixed;
                 transform: translateX(-100%);
-                transition: transform 0.3s ease;
+                transition: .3s;
             }
+
             .sidebar.show {
                 transform: translateX(0);
             }
-            .main-content {
+
+            .content-wrap {
                 margin-left: 0;
+            }
+
+            .searchbar {
+                flex-wrap: wrap;
+                gap: 8px;
+                /* compact spacing */
+                justify-content: space-between;
+            }
+
+            .searchbar .input-cand,
+            .searchbar .input-intern {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            #candEdu,
+            #candSector {
+                width: calc(50% - 6px) !important;
+                max-width: calc(50% - 6px) !important;
+            }
+
+            #intSector {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            /* Buttons become half-width (two side-by-side), no overflow */
+            .searchbar .btn-filter,
+            .searchbar .btn-reset {
+                width: calc(50% - 6px) !important;
+                /* two per row, small gap */
+                min-width: 140px;
+                /* optional: give them a usable min size */
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin-top: 4px;
+            }
+
+            .topbar .d-flex {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .topbar .d-flex>* {
+                min-width: 0;
+            }
+
+            #statusDb {
+                display: inline-block;
+                max-width: 29vw;
+            }
+
+            /* allow truncation in flex items */
+
+            .badge-soft.url {
+                width: auto;
+                /* don’t force width */
+                max-width: 60vw;
+                /* clamp to 60% of viewport */
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            #btnSidebarToggle {
+                display: inline-flex;
+            }
+
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+
+        @media (max-width: 900px) {
+
+            .bg::before,
+            .bg::after {
+                filter: blur(28px);
+                opacity: .85;
+            }
+
+            .bg .node {
+                width: 520px;
+                height: 520px;
+                right: 6%;
+                top: 6%;
+            }
+        }
+
+
+        @media (max-width: 992px) {
+
+            .glass-table td:nth-child(4),
+
+            .glass-table th:nth-child(4) {
+                display: none;
+            }
+
+            .glass-table td:nth-child(7),
+            .glass-table th:nth-child(7) {
+                display: none;
+                /* hide Diversity if cramped — optional */
+            }
+
+            .glass-table {
+                min-width: 720px;
+            }
+        }
+
+
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(2px);
+            z-index: 999;
+            /* just under the sidebar z-index 1000 */
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease;
+        }
+
+        .sidebar-backdrop.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        img,
+        canvas,
+        svg,
+        video {
+            max-width: 100%;
+            height: auto;
+        }
+
+        body.sidebar-open {
+            overflow: hidden;
+        }
+
+        @media (max-width: 1100px) {
+            .stat-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
 </head>
+
 <body>
-    <!-- Sidebar -->
-    <nav class="sidebar">
-        <div class="p-3">
-            <h4 class="text-white mb-4">
-                <i class="fas fa-brain"></i> AI Engine
-            </h4>
-            
-            <!-- Navigation Links -->
-            <div class="mb-4">
-                <a href="/" class="btn btn-outline-light btn-sm w-100 mb-2">
-                    <i class="fas fa-home"></i> Home
-                </a>
-                <a href="/candidate" class="btn btn-outline-light btn-sm w-100">
-                    <i class="fas fa-user-graduate"></i> Candidate Portal
-                </a>
-            </div>
-            
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#dashboard" onclick="showSection('dashboard')">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#candidates" onclick="showSection('candidates')">
-                        <i class="fas fa-users"></i> Candidates
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#internships" onclick="showSection('internships')">
-                        <i class="fas fa-briefcase"></i> Internships
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#analytics" onclick="showSection('analytics')">
-                        <i class="fas fa-chart-bar"></i> Analytics
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#settings" onclick="showSection('settings')">
-                        <i class="fas fa-cog"></i> Settings
-                    </a>
-                </li>
-            </ul>
+    <script>
+        (function () {
+            // If page is restored from BFCache after logout, force a reload
+            window.addEventListener('pageshow', function (e) { if (e.persisted) { location.reload(); } });
+
+            // Quick auth check: if not authenticated, redirect to login
+            fetch('/api/admin/me')
+                .then(r => {
+                    if (!r.ok) throw 0;
+                    return r.json();
+                })
+                .then(d => { if (!d.success) throw 0; })
+                .catch(() => { location.replace('/login?next=/admin'); });
+        })();
+    </script>
+
+    <div class="bg">
+        <div class="overlay" aria-hidden="true"></div>
+        <div class="vignette" aria-hidden="true"></div>
+        <div class="noise" aria-hidden="true"></div>
+
+
+        <div class="spark is-1" aria-hidden="true"></div>
+        <div class="spark is-2" aria-hidden="true"></div>
+        <div class="spark is-3" aria-hidden="true"></div>
+        <div class="spark is-4" aria-hidden="true"></div>
+        <div class="spark is-5" aria-hidden="true"></div>
+    </div>
+
+
+    <nav class="sidebar glass" id="sidebar">
+        <div class="brand"><i class="fas fa-brain"></i> <span class="brand-text">Admin Panel</span></div>
+
+        <div class="d-grid gap-2 mb-2">
+            <a href="/" class="btn btn-outline-light btn-sm"><i class="fas fa-home"></i> Home</a>
+            <a href="/candidate" class="btn btn-outline-light btn-sm"><i class="fas fa-user-graduate"></i> Candidate
+                Portal</a>
+        </div>
+
+        <div class="d-grid gap-1">
+            <a class="nav-link active" href="#dashboard" onclick="showSection('dashboard', this)"><i
+                    class="fas fa-gauge"></i> <span class="nav-text">Dashboard</span></a>
+            <a class="nav-link" href="#candidates" onclick="showSection('candidates', this)"><i
+                    class="fas fa-users"></i> <span class="nav-text">Candidates</span></a>
+            <a class="nav-link" href="#internships" onclick="showSection('internships', this)"><i
+                    class="fas fa-briefcase"></i> <span class="nav-text">Internships</span></a>
+            <a class="nav-link" href="#analytics" onclick="showSection('analytics', this)"><i
+                    class="fas fa-chart-bar"></i> <span class="nav-text">Analytics</span></a>
+            <a class="nav-link" href="#settings" onclick="showSection('settings', this)"><i class="fas fa-sliders"></i>
+                <span class="nav-text">Settings</span></a>
         </div>
     </nav>
+    <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Top Navigation Bar -->
-        <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded shadow-sm">
-            <div>
-                <h4 class="mb-0 text-primary">
-                    <i class="fas fa-cog"></i> Admin Dashboard
-                </h4>
-            </div>
-            <div>
-                <a href="/" class="btn btn-outline-secondary btn-sm me-2">
-                    <i class="fas fa-home"></i> Home
-                </a>
-                <a href="/candidate" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-user-graduate"></i> Candidate Portal
-                </a>
-            </div>
-        </div>
-        
-        <!-- Dashboard Section -->
-        <div id="dashboard-section" class="content-section">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
-                <div>
-                    <button class="btn btn-primary" onclick="refreshData()">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
-                </div>
-            </div>
 
-            <!-- Statistics Cards -->
-            <div class="row mb-4">
-                <div class="col-md-3 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-number" id="total-candidates">0</div>
-                        <div class="text-muted">Total Candidates</div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-number" id="total-internships">0</div>
-                        <div class="text-muted">Available Internships</div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-number" id="avg-match-score">0%</div>
-                        <div class="text-muted">Avg Match Score</div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-number" id="diversity-rate">0%</div>
-                        <div class="text-muted">Diversity Rate</div>
-                    </div>
-                </div>
-            </div>
+    <div class="content-wrap">
+        <div class="topbar glass">
+            <div class="d-flex w-100 justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-light btn-sm" id="btnSidebarToggle" title="Toggle menu"><i
+                            class="fas fa-bars"></i></button>
+                    <span class="badge-soft"><i class="fas fa-database"></i> <span id="statusMode">Mode</span></span>
+                    <span class="badge-soft url"><i class="fas fa-link"></i> <span id="statusDb">DB</span></span>
 
-            <!-- Charts Row -->
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="chart-container">
-                        <h5><i class="fas fa-chart-pie"></i> Sector Distribution</h5>
-                        <canvas id="sectorChart"></canvas>
-                    </div>
                 </div>
-                <div class="col-md-6 mb-4">
-                    <div class="chart-container">
-                        <h5><i class="fas fa-chart-line"></i> Match Score Trends</h5>
-                        <canvas id="trendChart"></canvas>
-                    </div>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-light btn-sm" href="/logout"><i class="fas fa-right-from-bracket"></i>
+                        Logout</a>
+                    <button class="btn btn-primary btn-sm" id="btnRefreshAll"><i class="fas fa-rotate"></i>
+                        Refresh</button>
                 </div>
-            </div>
 
-            <!-- Recent Activity -->
-            <div class="dashboard-card">
-                <h5><i class="fas fa-clock"></i> Recent Activity</h5>
-                <div id="recent-activity">
-                    <div class="text-center text-muted">
-                        <i class="fas fa-spinner fa-spin"></i> Loading...
-                    </div>
-                </div>
             </div>
         </div>
 
-        <!-- Candidates Section -->
-        <div id="candidates-section" class="content-section" style="display: none;">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-users"></i> Candidate Management</h2>
-                <button class="btn btn-success" onclick="showAddCandidateModal()">
-                    <i class="fas fa-plus"></i> Add Candidate
-                </button>
+
+        <section id="dashboard-section" class="glass panel">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-3"><i class="fas fa-gauge"></i> Overview</h5>
             </div>
 
-            <div class="table-container">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Education</th>
-                                <th>Location</th>
-                                <th>Skills</th>
-                                <th>Diversity</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="candidates-table">
-                            <tr>
-                                <td colspan="7" class="text-center text-muted">
-                                    <i class="fas fa-spinner fa-spin"></i> Loading candidates...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div class="stat-grid">
+                <div class="glass stat">
+                    <div class="lbl">Total Candidates</div>
+                    <div class="num" id="d_total_candidates">0</div>
+                </div>
+                <div class="glass stat">
+                    <div class="lbl">Available Internships</div>
+                    <div class="num" id="d_total_internships">0</div>
+                </div>
+                <div class="glass stat">
+                    <div class="lbl">Diversity Rate</div>
+                    <div class="num" id="d_diversity_rate">0%</div>
+                </div>
+                <div class="glass stat">
+                    <div class="lbl">Avg Match Score</div>
+                    <div class="num" id="d_avg_match">—</div>
                 </div>
             </div>
-        </div>
 
-        <!-- Internships Section -->
-        <div id="internships-section" class="content-section" style="display: none;">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-briefcase"></i> Internship Management</h2>
-                <button class="btn btn-success" onclick="showAddInternshipModal()">
-                    <i class="fas fa-plus"></i> Add Internship
-                </button>
-            </div>
-
-            <div class="table-container">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Title</th>
-                                <th>Company</th>
-                                <th>Sector</th>
-                                <th>Location</th>
-                                <th>Capacity</th>
-                                <th>Stipend</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="internships-table">
-                            <tr>
-                                <td colspan="8" class="text-center text-muted">
-                                    <i class="fas fa-spinner fa-spin"></i> Loading internships...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Analytics Section -->
-        <div id="analytics-section" class="content-section" style="display: none;">
-            <h2><i class="fas fa-chart-bar"></i> Analytics & Reports</h2>
-            
-            <div class="row">
-                <div class="col-md-8 mb-4">
-                    <div class="chart-container">
-                        <h5><i class="fas fa-chart-area"></i> Matching Performance</h5>
-                        <canvas id="performanceChart"></canvas>
+            <div class="analytics-grid">
+                <div class="analytics-left">
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-chart-pie"></i> Sector Distribution</h5>
+                        <canvas id="chartSector" height="220"></canvas>
+                    </div>
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-graduation-cap"></i> Education Levels</h5>
+                        <canvas id="chartEducation" height="220"></canvas>
                     </div>
                 </div>
-                <div class="col-md-4 mb-4">
-                    <div class="chart-container">
-                        <h5><i class="fas fa-map-marker-alt"></i> Location Distribution</h5>
-                        <canvas id="locationChart"></canvas>
+                <div class="analytics-right">
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-location-dot"></i> Location Distribution</h5>
+                        <canvas id="chartLocation" height="220"></canvas>
+                    </div>
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-users"></i> Diversity Metrics</h5>
+                        <canvas id="chartDiversity" height="220"></canvas>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="chart-container">
-                        <h5><i class="fas fa-graduation-cap"></i> Education Levels</h5>
-                        <canvas id="educationChart"></canvas>
-                    </div>
-                </div>
-                <div class="col-md-6 mb-4">
-                    <div class="chart-container">
-                        <h5><i class="fas fa-users"></i> Diversity Metrics</h5>
-                        <canvas id="diversityChart"></canvas>
-                    </div>
+
+        <section id="candidates-section" class="glass panel" style="display:none;">
+            <div class="d-flex justify-content-between align-items-start">
+                <h4 class="mb-3"><i class="fas fa-users"></i> Candidate Management</h4>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="showAddCandidateModal()"><i class="fas fa-plus"></i>
+                        Add New Candidate</button>
                 </div>
             </div>
-        </div>
+            <div class="searchbar">
+                <input id="candSearch" class="input-cand" placeholder="Search name, email, location, skill..." />
+                <select id="candEdu" class="form-select form-select-sm" style="max-width:220px;">
+                    <option value="">All Education</option>
+                    <option>Diploma</option>
+                    <option>Bachelor</option>
+                    <option>Master</option>
+                    <option>PhD</option>
+                </select>
+                <select id="candSector" class="form-select form-select-sm" style="max-width:220px;">
+                    <option value="">All Sectors</option>
+                    <option>Technology</option>
+                    <option>Finance</option>
+                    <option>Healthcare</option>
+                    <option>Marketing</option>
+                </select>
+                <button class="btn-filter d-inline-block" onclick="filterCandidates()"><i
+                        class="fas fa-filter d-inline-block"></i>
+                    Filter</button>
+                <button class="btn-reset d-inline-block" onclick="resetCandidateFilters()"><i
+                        class="fas fa-times d-inline-block"></i> Reset</button>
+            </div>
 
-        <!-- Settings Section -->
-        <div id="settings-section" class="content-section" style="display: none;">
-            <h2><i class="fas fa-cog"></i> System Settings</h2>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="dashboard-card">
-                        <h5><i class="fas fa-sliders-h"></i> Matching Weights</h5>
-                        <div class="mb-3">
-                            <label class="form-label">Skills Weight</label>
-                            <input type="range" class="form-range" id="skills-weight" min="0" max="50" value="30">
-                            <div class="d-flex justify-content-between">
-                                <span>0%</span>
-                                <span id="skills-value">30%</span>
-                                <span>50%</span>
-                            </div>
+            <div class="table-ressponsive">
+                <table class="glass-table table-hoover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Education</th>
+                            <th>Location</th>
+                            <th>Skills</th>
+                            <th>Diversity</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="candidatesTable">
+                        <tr class="selected">
+                            <td colspan="8" class="text-center text-muted">Loading…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+
+        <section id="internships-section" class="glass panel" style="display:none;">
+            <div class="d-flex justify-content-between align-items-start">
+                <h4 class="mb-3"><i class="fas fa-briefcase"></i> Internship Management</h4>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="showAddInternshipModal()"><i
+                            class="fas fa-plus"></i> Add New Internship</button>
+                </div>
+            </div>
+            <div class="searchbar">
+                <input id="intSearch" class="input-intern" placeholder="Search title, company, location, sector..." />
+                <select id="intSector" class="form-select form-select-sm" style="max-width:220px;">
+                    <option value="">All Sectors</option>
+                    <option>Technology</option>
+                    <option>Finance</option>
+                    <option>Healthcare</option>
+                    <option>Marketing</option>
+                </select>
+                <button class="btn-filter d-inline-block" onclick="filterInternships()"><i
+                        class="fas fa-filter d-inline-block"></i>
+                    Filter</button>
+                <button class="btn-reset d-inline-block" onclick="resetInternshipFilters()"><i
+                        class="fas fa-times d-inline-block"></i> Reset</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover glass-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Company</th>
+                            <th>Sector</th>
+                            <th>Location</th>
+                            <th>Capacity</th>
+                            <th>Stipend</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="internshipsTable">
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">Loading…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="analytics-section" class="glass panel" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Analytics & Insights</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-light btn-sm" id="btnExportAnalytics"><i
+                            class="fas fa-file-export"></i> Export JSON</button>
+                    <button class="btn btn-outline-light btn-sm" id="btnExportCandidates"><i
+                            class="fas fa-file-csv"></i> Export Candidates CSV</button>
+                    <button class="btn btn-outline-light btn-sm" id="btnExportInternships"><i
+                            class="fas fa-file-csv"></i> Export Internships CSV</button>
+                </div>
+            </div>
+
+            <div class="stat-grid mb-3">
+                <div class="glass stat">
+                    <div class="lbl">Median Stipend</div>
+                    <div class="num" id="kpiMedianStipend">₹0</div>
+                </div>
+                <div class="glass stat">
+                    <div class="lbl">Total Capacity</div>
+                    <div class="num" id="kpiTotalCapacity">0</div>
+                </div>
+                <div class="glass stat">
+                    <div class="lbl">Top Sector</div>
+                    <div class="num" id="kpiTopSector">—</div>
+                </div>
+                <div class="glass stat">
+                    <div class="lbl">Rural Share</div>
+                    <div class="num" id="kpiRuralShare">0%</div>
+                </div>
+            </div>
+
+            <div class="analytics-grid">
+                <div class="analytics-left">
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-arrow-up-right-dots"></i> Duration vs Stipend
+                            (Capacity
+                            Bubbles)</h5>
+                        <canvas id="chartBubble" height="280"></canvas>
+                    </div>
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-gauge-high"></i> Diversity‑focused Internship
+                            Share</h5>
+                        <div class="d-flex justify-content-center">
+                            <canvas id="gaugeDiversityShare" height="240" width="240"></canvas>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Location Weight</label>
-                            <input type="range" class="form-range" id="location-weight" min="0" max="30" value="20">
-                            <div class="d-flex justify-content-between">
-                                <span>0%</span>
-                                <span id="location-value">20%</span>
-                                <span>30%</span>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Education Weight</label>
-                            <input type="range" class="form-range" id="education-weight" min="0" max="30" value="20">
-                            <div class="d-flex justify-content-between">
-                                <span>0%</span>
-                                <span id="education-value">20%</span>
-                                <span>30%</span>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary" onclick="updateWeights()">
-                            <i class="fas fa-save"></i> Save Settings
-                        </button>
+                    </div>
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-sack-dollar"></i> Stipend Distribution</h5>
+                        <canvas id="chartStipend" height="260"></canvas>
+                    </div>
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-users-rectangle"></i> Social Category
+                            Distribution</h5>
+                        <canvas id="chartSocial" height="260"></canvas>
+                    </div>
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-layer-group"></i> Sector × Location (Stacked)
+                        </h5>
+                        <canvas id="chartSectorLocation" height="260"></canvas>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="dashboard-card">
-                        <h5><i class="fas fa-language"></i> Language Settings</h5>
-                        <div class="mb-3">
-                            <label class="form-label">Default Language</label>
-                            <select class="form-select" id="default-language">
-                                <option value="en">English</option>
-                                <option value="hi">हिन्दी</option>
-                                <option value="ta">தமிழ்</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Supported Languages</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="lang-en" checked>
-                                <label class="form-check-label" for="lang-en">English</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="lang-hi" checked>
-                                <label class="form-check-label" for="lang-hi">हिन्दी</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="lang-ta" checked>
-                                <label class="form-check-label" for="lang-ta">தமிழ்</label>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary" onclick="updateLanguageSettings()">
-                            <i class="fas fa-save"></i> Save Language Settings
-                        </button>
+                <div class="analytics-right">
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-list-check"></i> Top 10 Skills (Internships)
+                        </h5>
+                        <canvas id="chartSkills" height="260"></canvas>
                     </div>
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-seedling"></i> Rural‑friendly Internship Share
+                        </h5>
+                        <div class="d-flex justify-content-center">
+                            <canvas id="gaugeRuralShare" height="240" width="240"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-boxes-stacked"></i> Capacity by Sector</h5>
+                        <canvas id="chartCapacitySector" height="260"></canvas>
+                    </div>
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-location-dot"></i> Rural vs Urban (Candidates)
+                        </h5>
+                        <canvas id="chartRural" height="260"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced (kept from your set) -->
+            <div class="row g-3 mt-1">
+                <div class="col-xl-12">
+                    <div class="glass panel">
+                        <h5 class="border-bottom pb-2"><i class="fas fa-graduation-cap"></i> Education × Sector
+                            (Candidates)</h5>
+                        <canvas id="chartEduSector" height="260"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="settings-section" class="glass panel" style="display:none;">
+            <h5 class="mb-3"><i class="fas fa-sliders"></i> System Settings</h5>
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <div class="glass panel">
+                        <h6 class="mb-2"><i class="fas fa-sliders-h"></i> Matching Weights</h6>
+                        <div class="mb-2">
+                            <label class="form-label">Skills</label>
+                            <input type="range" class="form-range" id="wSkills" min="0" max="50" value="30">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Location</label>
+                            <input type="range" class="form-range" id="wLocation" min="0" max="30" value="20">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Education</label>
+                            <input type="range" class="form-range" id="wEducation" min="0" max="30" value="20">
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="saveWeights()"><i class="fas fa-save"></i>
+                            Save</button>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="glass panel">
+                        <h6 class="mb-2"><i class="fas fa-language"></i> Language</h6>
+                        <select class="form-select mb-2" id="defaultLang">
+                            <option value="en">English</option>
+                            <option value="hi">हिन्दी</option>
+                            <option value="ta">தமிழ்</option>
+                        </select>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" id="langEn" checked>
+                            <label class="form-check-label" for="langEn">English</label>
+                        </div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" id="langHi" checked>
+                            <label class="form-check-label" for="langHi">हिन्दी</label>
+                        </div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" id="langTa" checked>
+                            <label class="form-check-label" for="langTa">தமிழ்</label>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="saveLanguage()"><i class="fas fa-save"></i>
+                            Save</button>
+                    </div>
+                </div>
+                <div class="col-lg-12">
+                    <div class="glass panel">
+                        <h6 class="mb-2"><i class="fas fa-database"></i> Data Import (Internships)</h6>
+                        <div class="mb-2 small text-muted">Default path: stored server-side (data/internships.csv).
+                            Choose Append to merge; Replace will wipe current internships.</div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-outline-light btn-sm" onclick="importFromDefaultCSV('append')"><i
+                                    class="fas fa-file-import"></i> Import default CSV (Append)</button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="importFromDefaultCSV('replace')"><i
+                                    class="fas fa-trash-arrow-up"></i> Import default CSV (Replace)</button>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <input type="file" id="csvFile" accept=".csv" class="form-control form-control-sm"
+                                style="max-width:360px">
+                            <button class="btn btn-outline-light btn-sm" onclick="uploadCSV('append')"><i
+                                    class="fas fa-upload"></i> Upload & Append</button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="uploadCSV('replace')"><i
+                                    class="fas fa-upload"></i> Upload & Replace</button>
+                        </div>
+                        <div id="csvImportStatus" class="small text-muted mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+
+    <div class="modal fade modal-glass" id="candidateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user"></i> Candidate</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div><strong class="text-primary">Name:</strong> <span id="cmName"></span></div>
+                            <div><strong class="text-primary">Email:</strong> <span id="cmEmail"></span></div>
+                            <div><strong class="text-primary">Location:</strong> <span id="cmLocation"></span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div><strong class="text-primary">Education:</strong> <span id="cmEducation"></span></div>
+                            <div><strong class="text-primary">Category:</strong> <span id="cmCategory"></span></div>
+                            <div><strong class="text-primary">Diversity:</strong> <span id="cmDiversity"></span></div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <strong class="text-primary">Skills:</strong> <span id="cmSkills"></span>
+                    </div>
+                    <div class="mt-3">
+                        <strong class="text-primary">Sector Interests:</strong> <span id="cmSectors"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="btnViewCandidateShortlist" class="btn btn-outline-light btn-sm"><i
+                            class="fas fa-bookmark"></i> View Shortlist</button>
+                    <button class="btn btn-primary btn-sm" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modals -->
-    <div class="modal fade" id="addCandidateModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade modal-glass" id="editCandidateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add New Candidate</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title"><i class="fas fa-user-pen"></i> Edit Candidate</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addCandidateForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Full Name</label>
-                                <input type="text" class="form-control" id="candidate-name" required>
+                    <div id="ecAlert" class="alert alert-danger py-2 px-3" style="display:none;"></div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><label class="form-label">Full Name</label><input id="ecName"
+                                class="form-control text-dark bg-secondary" /></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input id="ecEmail"
+                                class="form-control text-dark bg-secondary" /></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Education</label>
+                            <select id="ecEdu" class="form-select text-dark bg-secondary">
+                                <option>Diploma</option>
+                                <option>Bachelor</option>
+                                <option>Master</option>
+                                <option>PhD</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Location</label>
+                            <select id="ecLocation" class="form-select text-dark bg-secondary">
+                                <option value="">Select Location</option>
+                                <option>Bangalore</option>
+                                <option>Mumbai</option>
+                                <option>Delhi</option>
+                                <option>Chennai</option>
+                                <option>Hyderabad</option>
+                                <option>Pune</option>
+                                <option>Kolkata</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6"><label class="form-label">Skills (comma-separated)</label><input
+                                id="ecSkills" class="form-control text-dark bg-secondary" /></div>
+                        <div class="col-md-6"><label class="form-label">Sectors (comma-separated)</label><input
+                                id="ecSectors" class="form-control text-dark bg-secondary" /></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Social Category</label>
+                            <select id="ecCategory" class="form-select text-dark bg-secondary">
+                                <option value="">Select Category</option>
+                                <option>General</option>
+                                <option>SC</option>
+                                <option>ST</option>
+                                <option>OBC</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end justify-content-between gap-3">
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="ecRuralFrom">
+                                <label class="form-check-label">From Rural Area</label>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Education Level</label>
-                                <select class="form-select" id="candidate-education" required>
-                                    <option value="">Select Education</option>
-                                    <option value="Diploma">Diploma</option>
-                                    <option value="Bachelor">Bachelor's Degree</option>
-                                    <option value="Master">Master's Degree</option>
-                                    <option value="PhD">PhD</option>
-                                </select>
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="ecFirstGen">
+                                <label class="form-check-label">First-Gen</label>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Skills (comma-separated)</label>
-                                <input type="text" class="form-control" id="candidate-skills" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Location</label>
-                                <select class="form-select" id="candidate-location" required>
-                                    <option value="">Select Location</option>
-                                    <option value="Bangalore">Bangalore</option>
-                                    <option value="Mumbai">Mumbai</option>
-                                    <option value="Delhi">Delhi</option>
-                                    <option value="Chennai">Chennai</option>
-                                    <option value="Hyderabad">Hyderabad</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Sector Interests</label>
-                                <input type="text" class="form-control" id="candidate-sectors" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Social Category</label>
-                                <select class="form-select" id="candidate-social">
-                                    <option value="">Select Category</option>
-                                    <option value="General">General</option>
-                                    <option value="SC">SC</option>
-                                    <option value="ST">ST</option>
-                                    <option value="OBC">OBC</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="candidate-rural-pref">
-                                    <label class="form-check-label">Prefers Rural</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="candidate-rural-from">
-                                    <label class="form-check-label">From Rural Area</label>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="candidate-first-gen">
-                                    <label class="form-check-label">First Generation</label>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="addCandidate()">Add Candidate</button>
+                    <button id="btnSaveCandidate" class="btn btn-primary "><i class="fas fa-save"></i>
+                        Save</button>
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Shortlist Drawer (Admin view for a candidate) -->
+    <div class="offcanvas offcanvas-end glass" tabindex="-1" id="adminShortlistDrawer">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title text-primary"><i class="fas fa-bookmark"></i> Candidate Shortlist</h5>
+            <button class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div id="adminShortlistInfo" class="text-success small mb-2"></div>
+            <div id="adminShortlistList" class="list-group list-group-flush rounded-3 bg-secondary-subtle"></div>
+        </div>
+    </div>
+
+    <!-- Add Candidate Modal (kept simple) -->
+    <div class="modal fade modal-glass" id="addCandidateModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Candidate</h5><button class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="acAlert" class="alert alert-danger py-2 px-3" style="display:none;"></div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><input id="acName" class="form-control text-white bg-secondary"
+                                placeholder="Full name" /></div>
+                        <div class="col-md-6"><input id="acEmail" class="form-control text-white bg-secondary"
+                                placeholder="Email" /></div>
+                        <div class="col-md-6">
+                            <select id="acEdu" class="form-select text-white bg-secondary">
+                                <option value="">Education Level</option>
+                                <option>Diploma</option>
+                                <option>Bachelor</option>
+                                <option>Master</option>
+                                <option>PhD</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <select id="acLocation" class="form-select text-white bg-secondary">
+                                <option value="">Select Location</option>
+                                <option>Bangalore</option>
+                                <option>Mumbai</option>
+                                <option>Delhi</option>
+                                <option>Chennai</option>
+                                <option>Hyderabad</option>
+                                <option>Pune</option>
+                                <option>Kolkata</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6"><input id="acSkills" class="form-control text-white bg-secondary"
+                                placeholder="Skills (comma-separated)" /></div>
+                        <div class="col-md-6"><input id="acSectors" class="form-control text-white bg-secondary"
+                                placeholder="Sectors (comma-separated)" /></div>
+                        <div class="col-md-6">
+                            <select id="acCategory" class="form-select text-white bg-secondary">
+                                <option value="">Select Social Category</option>
+                                <option>General</option>
+                                <option>SC</option>
+                                <option>ST</option>
+                                <option>OBC</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center justify-content-between">
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="acRuralFrom">
+                                <label class="form-check-label">From Rural Area</label>
+                            </div>
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="acFirstGen">
+                                <label class="form-check-label">First-Gen</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" onclick="addCandidateQuick()">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade modal-glass" id="internshipModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-briefcase"></i> <span id="imTitle">Internship</span></h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="fw-bolder text-warning-emphasis" id="imCompany">Post</h5>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap" id="imBadges"></div>
+                    </div>
+                    <div class="row g-3 small text-muted mb-3">
+                        <div class="col-md-6"><strong class="text-primary">Location:</strong> <span id="imLocation"
+                                class="text-white"></span></div>
+                        <div class="col-md-6"><strong class="text-primary">Education:</strong> <span id="imEducation"
+                                class="text-white"></span></div>
+                        <div class="col-md-6"><strong class="text-primary">Duration:</strong> <span id="imDuration"
+                                class="text-white"></span></div>
+                        <div class="col-md-6"><strong class="text-primary">Stipend:</strong> <span id="imStipend"
+                                class="text-white"></span></div>
+                        <div class="col-md-6"><strong class="text-primary">Capacity:</strong> <span id="imCapacity"
+                                class="text-white"></span></div>
+                        <div class="col-md-6"><strong class="text-primary">Sector:</strong> <span id="imSector"
+                                class="text-white"></span></div>
+                    </div>
+                    <div class="mb-1"><strong class="text-primary">Required Skills:</strong></div>
+                    <div id="imSkills"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade modal-glass" id="addInternshipModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Add Internship</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="aiAlert" class="alert alert-danger py-2 px-3" style="display:none;"></div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><label class="form-label">Title</label><input id="aiTitle"
+                                class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-6"><label class="form-label">Company</label><input id="aiCompany"
+                                class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sector</label>
+                            <select id="aiSector" class="form-select text-white bg-secondary">
+                                <option>Technology</option>
+                                <option>Finance</option>
+                                <option>Healthcare</option>
+                                <option>Marketing</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Location</label>
+                            <select id="aiLocation" class="form-select text-white bg-secondary">
+                                <option>Bangalore</option>
+                                <option>Mumbai</option>
+                                <option>Delhi</option>
+                                <option>Chennai</option>
+                                <option>Hyderabad</option>
+                                <option>Pune</option>
+                                <option>Kolkata</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6"><label class="form-label">Skills (comma-separated)</label><input
+                                id="aiSkills" class="form-control text-white bg-secondary"
+                                placeholder="e.g., Python, React" /></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Education</label>
+                            <select id="aiEducation" class="form-select text-white bg-secondary">
+                                <option>Diploma</option>
+                                <option>Bachelor</option>
+                                <option>Master</option>
+                                <option>PhD</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4"><label class="form-label">Capacity</label><input id="aiCapacity"
+                                type="number" min="1" class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-4"><label class="form-label">Duration (months)</label><input id="aiDuration"
+                                type="number" min="1" class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-4"><label class="form-label">Stipend (₹/mo)</label><input id="aiStipend"
+                                type="number" min="0" class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-6 d-flex align-items-center gap-3">
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="aiRural"> <label
+                                    class="form-check-label">Rural Friendly</label></div>
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="aiDiversity">
+                                <label class="form-check-label">Diversity Focused</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary btn-sm" id="btnAddInternship"><i class="fas fa-save"></i>
+                        Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade modal-glass" id="editInternshipModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-pen"></i> Edit Internship</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="eiAlert" class="alert alert-danger py-2 px-3" style="display:none;"></div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><label class="form-label">Title</label><input id="eiTitle"
+                                class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-6"><label class="form-label">Company</label><input id="eiCompany"
+                                class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sector</label>
+                            <select id="eiSector" class="form-select text-white bg-secondary">
+                                <option>Technology</option>
+                                <option>Finance</option>
+                                <option>Healthcare</option>
+                                <option>Marketing</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Location</label>
+                            <select id="eiLocation" class="form-select text-white bg-secondary">
+                                <option>Bangalore</option>
+                                <option>Mumbai</option>
+                                <option>Delhi</option>
+                                <option>Chennai</option>
+                                <option>Hyderabad</option>
+                                <option>Pune</option>
+                                <option>Kolkata</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6"><label class="form-label">Skills (comma-separated)</label><input
+                                id="eiSkills" class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Education</label>
+                            <select id="eiEducation" class="form-select text-white bg-secondary">
+                                <option>Diploma</option>
+                                <option>Bachelor</option>
+                                <option>Master</option>
+                                <option>PhD</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4"><label class="form-label">Capacity</label><input id="eiCapacity"
+                                type="number" min="1" class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-4"><label class="form-label">Duration (months)</label><input id="eiDuration"
+                                type="number" min="1" class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-4"><label class="form-label">Stipend (₹/mo)</label><input id="eiStipend"
+                                type="number" min="0" class="form-control text-white bg-secondary" /></div>
+                        <div class="col-md-6 d-flex align-items-center gap-3">
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="eiRural"> <label
+                                    class="form-check-label">Rural Friendly</label></div>
+                            <div class="form-check"><input class="form-check-input" type="checkbox" id="eiDiversity">
+                                <label class="form-check-label">Diversity Focused</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary btn-sm" id="btnSaveInternship"><i class="fas fa-save"></i>
+                        Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="position-fixed bottom-0 end-0 p-1 toast-container">
+        <div id="toastContainer"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Global variables
-        let sectorChart, trendChart, performanceChart, locationChart, educationChart, diversityChart;
+        // Globals
+        let chartSector, chartLocation, chartEducation, chartDiversity; // dashboard
+        let chartSkills, chartStipend, chartCapacitySector, chartSectorLocation, chartEduSector, chartSocial, chartRural; // analytics
+        let chartBubble, gaugeDiversityShare, gaugeRuralShare;
+        let allCandidates = [], filteredCandidates = [];
+        let allInternships = [], filteredInternships = [];
+        const candModal = new bootstrap.Modal(document.getElementById('candidateModal'));
+        const adminShortlistDrawer = new bootstrap.Offcanvas(document.getElementById('adminShortlistDrawer'));
+        const internshipModal = new bootstrap.Modal(document.getElementById('internshipModal'));
+        const addInternshipModal = new bootstrap.Modal(document.getElementById('addInternshipModal'));
+        const editInternshipModal = new bootstrap.Modal(document.getElementById('editInternshipModal'));
+        let editingInternshipId = null;
 
-        // Initialize dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDashboardData();
-            initializeCharts();
+        // Settings — model/state
+        const SETTINGS_DEFAULTS = {
+            weights: { skills: 30, location: 20, education: 20 },
+            language: { default: 'en', enabled: ['en', 'hi', 'ta'] }
+        };
+        let SETTINGS_CACHE = null;
+
+        // Hard-cap and coerce helpers
+        const clamp = (v, min, max) => Math.min(max, Math.max(min, Number.isFinite(+v) ? +v : 0));
+
+        // Validate + normalize weights to a 100-point scale
+        function normalizeWeights(raw) {
+            const skills = clamp(raw.skills, 0, 50);
+            const location = clamp(raw.location, 0, 30);
+            const education = clamp(raw.education, 0, 30);
+            const sum = skills + location + education;
+            if (sum <= 0) return { skills: 34, location: 33, education: 33 }; // safe default
+            // Normalize to 100 while keeping ratios
+            return {
+                skills: Math.round((skills / sum) * 100),
+                location: Math.round((location / sum) * 100),
+                education: 100 - (Math.round((skills / sum) * 100) + Math.round((location / sum) * 100))
+            };
+        }
+
+        // Merge shallow settings payloads
+        function mergeSettings(base, partial) {
+            const out = JSON.parse(JSON.stringify(base || {}));
+            if (partial.weights) out.weights = { ...out.weights, ...partial.weights };
+            if (partial.language) out.language = { ...out.language, ...partial.language };
+            return out;
+        }
+
+        // Wait for Chart.js (loaded via <script defer>) to be available
+        const chartsReady = new Promise((resolve) => {
+            const start = performance.now();
+            const maxWait = 8000; // 8s timeout
+            (function tick() {
+                if (window.Chart && Chart.registry) return resolve();
+                if (performance.now() - start > maxWait) {
+                    console.warn('Chart.js not loaded in time; continuing without charts.');
+                    return resolve();
+                }
+                setTimeout(tick, 30);
+            })();
         });
 
-        // Navigation functions
-        function showSection(sectionName) {
-            // Hide all sections
-            document.querySelectorAll('.content-section').forEach(section => {
-                section.style.display = 'none';
-            });
-            
-            // Remove active class from all nav links
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            
-            // Show selected section
-            document.getElementById(sectionName + '-section').style.display = 'block';
-            
-            // Add active class to clicked nav link
-            event.target.classList.add('active');
-            
-            // Load section-specific data
-            if (sectionName === 'candidates') {
-                loadCandidates();
-            } else if (sectionName === 'internships') {
-                loadInternships();
-            } else if (sectionName === 'analytics') {
-                loadAnalytics();
+        let centerTextRegistered = false;
+        function registerChartPluginsIfNeeded() {
+            if (window.Chart && !centerTextRegistered) {
+                Chart.register(centerTextPlugin);
+                centerTextRegistered = true;
             }
         }
 
-        // Dashboard functions
-        async function loadDashboardData() {
+        const FETCH_CACHE = {};
+        const deepClone = (obj) =>
+            (typeof structuredClone === 'function' ? structuredClone(obj) : JSON.parse(JSON.stringify(obj)));
+
+        async function cacheFetch(url, opts = {}, ttlMs = 10000) {
+            const key = url + JSON.stringify(opts || {});
+            const now = Date.now();
+            const cached = FETCH_CACHE[key];
+            if (cached && (now - cached.ts) < ttlMs) {
+                return deepClone(cached.data);
+            }
+            const r = await fetch(url, opts);
+            const data = await r.json();
+            FETCH_CACHE[key] = { ts: now, data };
+            return deepClone(data);
+        }
+        function clearCache() { Object.keys(FETCH_CACHE).forEach(k => delete FETCH_CACHE[k]); }
+
+        // Utilities
+        function toast(type, msg, delay = 2500) {
+            const id = 't_' + Date.now();
+            const map = { success: 'text-bg-success', error: 'text-bg-danger', info: 'text-bg-primary', warning: 'text-bg-warning' };
+            const html = `<div id="${id}" class="toast ${map[type] || map.info} border-0 mb-2" role="alert" data-bs-delay="${delay}">
+        <div class="d-flex"><div class="toast-body">${msg}</div><button class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
+            document.getElementById('toastContainer').insertAdjacentHTML('beforeend', html);
+            const el = document.getElementById(id); new bootstrap.Toast(el).show(); el.addEventListener('hidden.bs.toast', () => el.remove());
+        }
+        const sidebarEl = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+        function isMobile() {
+            return window.matchMedia('(max-width: 768px)').matches;
+        }
+
+        function openSidebar() {
+            if (!isMobile()) return;
+            sidebarEl.classList.add('show');
+            sidebarBackdrop.classList.add('show');
+            document.body.classList.add('sidebar-open');
+        }
+        function closeSidebar() {
+            sidebarEl.classList.remove('show');
+            sidebarBackdrop.classList.remove('show');
+            document.body.classList.remove('sidebar-open');
+        }
+        function toggleSidebar() {
+            if (!isMobile()) return; // ignore toggle on desktop
+            if (sidebarEl.classList.contains('show')) closeSidebar(); else openSidebar();
+        }
+
+        // Close on backdrop click and ESC
+        sidebarBackdrop.addEventListener('click', closeSidebar);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeSidebar();
+        });
+
+        // Close if user resizes to desktop while open
+        window.addEventListener('resize', () => {
+            if (!isMobile()) closeSidebar();
+        });
+        function showSection(name, el) {
+            document.querySelectorAll('.content-wrap section').forEach(s => s.style.display = 'none');
+            document.getElementById(name + '-section').style.display = 'block';
+            document.querySelectorAll('.sidebar .nav-link').forEach(a => a.classList.remove('active'));
+            if (el) el.classList.add('active');
+
+            // close the sidebar on mobile after navigation
+            closeSidebar();
+
+            if (name === 'candidates') loadCandidates();
+            if (name === 'internships') loadInternships();
+            if (name === 'analytics') loadAnalytics();
+        }
+        function rupees(n) { return '₹' + Number(n || 0).toLocaleString('en-IN'); }
+
+        // Status
+        async function loadStatus() {
             try {
-                const [candidatesRes, internshipsRes] = await Promise.all([
-                    fetch('/api/candidates'),
-                    fetch('/api/internships')
-                ]);
-                
-                const candidates = await candidatesRes.json();
-                const internships = await internshipsRes.json();
-                
-                if (candidates.success && internships.success) {
-                    updateDashboardStats(candidates.candidates, internships.internships);
-                    updateRecentActivity(candidates.candidates);
-                }
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
+                const r = await fetch('/api/status'); const d = await r.json();
+                document.getElementById('statusMode').textContent = d.mode || '—';
+                document.getElementById('statusDb').textContent = (d.db_uri || '—').replace(/^postgresql:\/\/.+@/, 'postgresql://***@');
+            } catch { document.getElementById('statusMode').textContent = '—'; document.getElementById('statusDb').textContent = '—'; }
+        }
+
+        async function loadSettings() {
+            try {
+                const r = await fetch('/api/settings', { headers: { 'Accept': 'application/json' } });
+                let d = null;
+                if (r.ok) d = await r.json();
+                if (!d || d.success === false || !d.settings) throw new Error('Settings not found');
+
+                SETTINGS_CACHE = mergeSettings(SETTINGS_DEFAULTS, d.settings);
+            } catch (e) {
+                console.warn('loadSettings fallback to defaults:', e.message || e);
+                SETTINGS_CACHE = JSON.parse(JSON.stringify(SETTINGS_DEFAULTS));
             }
+            applySettingsToUI(SETTINGS_CACHE);
         }
 
-        function updateDashboardStats(candidates, internships) {
-            document.getElementById('total-candidates').textContent = candidates.length;
-            document.getElementById('total-internships').textContent = internships.length;
-            
-            // Calculate average match score (simulated)
-            const avgScore = Math.floor(Math.random() * 20) + 75; // 75-95%
-            document.getElementById('avg-match-score').textContent = avgScore + '%';
-            
-            // Calculate diversity rate
-            const diversityCount = candidates.filter(c => 
-                c.from_rural_area || c.social_category !== 'General' || c.first_generation_graduate
-            ).length;
-            const diversityRate = candidates.length > 0 ? Math.round((diversityCount / candidates.length) * 100) : 0;
-            document.getElementById('diversity-rate').textContent = diversityRate + '%';
+        function applySettingsToUI(settings) {
+            const w = settings.weights || SETTINGS_DEFAULTS.weights;
+
+            // Accept either "skill" (backend) or fallback "skills"
+            const skillPct = (w.skill ?? w.skills ?? 30);
+            const locPct = (w.location ?? 20);
+            const eduPct = (w.education ?? 20);
+
+            // Slider raw ranges: Skills [0..50], Location [0..30], Education [0..30]
+            const toRaw = (p, max) => Math.round((Number(p) || 0) * max / 100);
+
+            document.getElementById('wSkills').value = toRaw(skillPct, 50);
+            document.getElementById('wLocation').value = toRaw(locPct, 30);
+            document.getElementById('wEducation').value = toRaw(eduPct, 30);
+
+            // Languages
+            const lang = settings.language || SETTINGS_DEFAULTS.language;
+            const enabled = new Set(lang.enabled || []);
+            document.getElementById('defaultLang').value = lang.default || 'en';
+            document.getElementById('langEn').checked = enabled.has('en');
+            document.getElementById('langHi').checked = enabled.has('hi');
+            document.getElementById('langTa').checked = enabled.has('ta');
         }
 
-        function updateRecentActivity(candidates) {
-            const activityContainer = document.getElementById('recent-activity');
-            const recentCandidates = candidates.slice(-5).reverse();
-            
-            activityContainer.innerHTML = recentCandidates.map(candidate => `
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <div>
-                        <strong>${candidate.name}</strong> registered
-                        <small class="text-muted">- ${candidate.education_level} in ${candidate.location}</small>
-                    </div>
-                    <span class="badge bg-primary">New</span>
-                </div>
-            `).join('');
-        }
+        // Collect settings from UI
+        function collectSettingsFromUI() {
+            // Sliders → raw values
+            const raw = {
+                skill: clamp(document.getElementById('wSkills').value, 0, 50),
+                location: clamp(document.getElementById('wLocation').value, 0, 30),
+                education: clamp(document.getElementById('wEducation').value, 0, 30)
+            };
 
-        // Chart initialization
-        function initializeCharts() {
-            // Sector Distribution Chart
-            const sectorCtx = document.getElementById('sectorChart').getContext('2d');
-            sectorChart = new Chart(sectorCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Technology', 'Finance', 'Healthcare', 'Marketing'],
-                    datasets: [{
-                        data: [40, 25, 20, 15],
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
+            // Normalize to 100-scale (normalizer expects "skills")
+            const norm = normalizeWeights({
+                skills: raw.skill,
+                location: raw.location,
+                education: raw.education
             });
 
-            // Trend Chart
-            const trendCtx = document.getElementById('trendChart').getContext('2d');
-            trendChart = new Chart(trendCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Avg Match Score',
-                        data: [78, 82, 85, 88, 86, 89],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
+            const weights = {
+                skill: norm.skills,       // singular key expected by backend
+                location: norm.location,
+                education: norm.education
+            };
+
+            // Language
+            const defaultLang = document.getElementById('defaultLang').value || 'en';
+            const enabled = [
+                document.getElementById('langEn').checked ? 'en' : null,
+                document.getElementById('langHi').checked ? 'hi' : null,
+                document.getElementById('langTa').checked ? 'ta' : null
+            ].filter(Boolean);
+            if (!enabled.includes(defaultLang)) enabled.push(defaultLang);
+
+            return { weights, language: { default: defaultLang, enabled } };
+        }
+
+        // Dashboard + Analytics
+        async function loadDashboard() {
+            try {
+                await chartsReady;
+                registerChartPluginsIfNeeded();
+                const d = await cacheFetch('/api/analytics');
+                if (!d.success) { throw new Error('Analytics failed'); }
+                const a = d.analytics || {};
+                document.getElementById('d_total_candidates').textContent = a.total_candidates || 0;
+                document.getElementById('d_total_internships').textContent = a.total_internships || 0;
+                document.getElementById('d_diversity_rate').textContent = (a.diversity_rate || 0) + '%';
+                // Simple synthetic avg match (placeholder)
+                document.getElementById('d_avg_match').textContent = (a.avg_match || 91) + '%';
+
+                // Charts
+                const sLabs = Object.keys(a.sector_distribution || {}), sVals = Object.values(a.sector_distribution || {});
+                chartSector && chartSector.destroy();
+                chartSector = new Chart(document.getElementById('chartSector'), {
+                    type: 'doughnut', data: { labels: sLabs, datasets: [{ data: sVals, backgroundColor: ['#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#22d3ee'] }] },
+                    options: { plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+                });
+
+                const lLabs = Object.keys(a.location_distribution || {}), lVals = Object.values(a.location_distribution || {});
+                chartLocation && chartLocation.destroy();
+                chartLocation = new Chart(document.getElementById('chartLocation'), {
+                    type: 'bar', data: { labels: lLabs, datasets: [{ label: 'Candidates', data: lVals, backgroundColor: '#60a5fa' }] },
+                    options: { scales: { x: { ticks: { color: '#cbd5e1' } }, y: { ticks: { color: '#cbd5e1' } } }, plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+                });
+
+                const eLabs = Object.keys(a.education_distribution || {}), eVals = Object.values(a.education_distribution || {});
+                chartEducation && chartEducation.destroy();
+                chartEducation = new Chart(document.getElementById('chartEducation'), {
+                    type: 'bar', data: { labels: eLabs, datasets: [{ label: 'Candidates', data: eVals, backgroundColor: '#34d399' }] },
+                    options: { scales: { x: { ticks: { color: '#cbd5e1' } }, y: { ticks: { color: '#cbd5e1' } } }, plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+                });
+
+                chartDiversity && chartDiversity.destroy();
+                chartDiversity = new Chart(document.getElementById('chartDiversity'), {
+                    type: 'doughnut',
+                    data: { labels: ['Inclusive', 'Other'], datasets: [{ data: [a.diversity_rate || 0, 100 - (a.diversity_rate || 0)], backgroundColor: ['#34d399', '#475569'] }] },
+                    options: { plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+                });
+            } catch (e) { toast('error', 'Failed to load dashboard'); }
+        }
+
+        const centerTextPlugin = {
+            id: 'centerText',
+            afterDraw(chart, _, opts) {
+                const { ctx, chartArea: { width, height } } = chart;
+                const opt = chart.config.options?.plugins?.centerText || {};
+                const text = opt.text || '';
+                ctx.save();
+                ctx.font = (opt.font || '700 22px Inter, Segoe UI, sans-serif');
+                ctx.fillStyle = opt.color || '#e2e8f0';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(text, chart.getDatasetMeta(0).data[0]?.x || width / 2, chart.getDatasetMeta(0).data[0]?.y || height / 2);
+                ctx.restore();
+            }
+        };
+
+        function downloadBlob(filename, content, type = 'application/octet-stream') {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+            URL.revokeObjectURL(url);
+        }
+        function toCSV(rows, headers) {
+            const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+            const head = headers.map(esc).join(',');
+            const body = rows.map(r => headers.map(h => esc(r[h])).join(',')).join('\n');
+            return head + '\n' + body;
+        }
+        document.getElementById('btnExportAnalytics').addEventListener('click', () => {
+            const data = window.__AN_CACHE__ || {};
+            downloadBlob('analytics.json', JSON.stringify(data, null, 2), 'application/json');
+        });
+        document.getElementById('btnExportCandidates').addEventListener('click', () => {
+            const C = (window.__AN_CACHE__ || {}).candidates || [];
+            const headers = ['id', 'name', 'email', 'education_level', 'location', 'social_category', 'from_rural_area', 'first_generation_graduate', 'skills', 'sector_interests'];
+            const rows = C.map(c => ({
+                id: c.id, name: c.name, email: c.email, education_level: c.education_level, location: c.location,
+                social_category: c.social_category, from_rural_area: c.from_rural_area, first_generation_graduate: c.first_generation_graduate,
+                skills: (c.skills || []).join('|'), sector_interests: (c.sector_interests || []).join('|')
+            }));
+            downloadBlob('candidates.csv', toCSV(rows, headers), 'text/csv');
+        });
+        document.getElementById('btnExportInternships').addEventListener('click', () => {
+            const I = (window.__AN_CACHE__ || {}).internships || [];
+            const headers = ['id', 'title', 'company', 'sector', 'location', 'education_level', 'capacity', 'duration_months', 'stipend', 'rural_friendly', 'diversity_focused', 'skills_required'];
+            const rows = I.map(i => ({
+                id: i.id, title: i.title, company: i.company, sector: i.sector, location: i.location, education_level: i.education_level,
+                capacity: i.capacity, duration_months: i.duration_months, stipend: i.stipend, rural_friendly: i.rural_friendly, diversity_focused: i.diversity_focused,
+                skills_required: (i.skills_required || []).join('|')
+            }));
+            downloadBlob('internships.csv', toCSV(rows, headers), 'text/csv');
+        });
+
+        async function loadAnalytics() {
+            try {
+                await chartsReady;
+                registerChartPluginsIfNeeded();
+                const [an, cand, ints] = await Promise.all([
+                    cacheFetch('/api/analytics'),
+                    cacheFetch('/api/candidates'),
+                    cacheFetch('/api/internships')
+                ]);
+                if (!an.success || !cand.success || !ints.success) throw new Error('API error');
+
+                const A = an.analytics || {}; const C = cand.candidates || []; const I = ints.internships || [];
+
+                // KPIs
+                const stipends = I.map(i => Number(i.stipend || 0)).filter(n => !isNaN(n)).sort((a, b) => a - b);
+                const median = stipends.length ? (stipends.length % 2 ? stipends[(stipends.length - 1) / 2] : Math.round((stipends[stipends.length / 2 - 1] + stipends[stipends.length / 2]) / 2)) : 0;
+                const totalCapacity = I.reduce((s, i) => s + Number(i.capacity || 0), 0);
+                const topSector = Object.entries(A.sector_distribution || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+                const ruralShareCand = Math.round(100 * (C.filter(x => x.from_rural_area).length) / (C.length || 1));
+
+                document.getElementById('kpiMedianStipend').textContent = rupees(median);
+                document.getElementById('kpiTotalCapacity').textContent = totalCapacity;
+                document.getElementById('kpiTopSector').textContent = topSector;
+                document.getElementById('kpiRuralShare').textContent = ruralShareCand + '%';
+
+                // Bubble: duration vs stipend, r by capacity, color by sector
+                const sectorPalette = {};
+                const sectors = Array.from(new Set(I.map(i => i.sector)));
+                sectors.forEach((s, idx) => sectorPalette[s] = `hsl(${(idx * 60) % 360} 70% 55% / 0.85)`);
+                const bubbleData = I.map(i => ({
+                    x: Number(i.duration_months || 0),
+                    y: Number(i.stipend || 0),
+                    r: Math.max(5, Math.min(20, Math.sqrt(Number(i.capacity || 0)) * 3)),
+                    sector: i.sector || '',
+                    label: `${i.title} @ ${i.company}`
+                }));
+                const bubbleDatasets = sectors.map(s => ({
+                    label: s,
+                    data: bubbleData.filter(b => b.sector === s).map(({ x, y, r, label }) => ({ x, y, r, label })),
+                    backgroundColor: sectorPalette[s]
+                }));
+                chartBubble && chartBubble.destroy();
+                chartBubble = new Chart(document.getElementById('chartBubble'), {
+                    type: 'bubble', data: { datasets: bubbleDatasets },
+                    options: {
+                        plugins: {
+                            legend: { labels: { color: '#e2e8f0' } }, tooltip: {
+                                callbacks: {
+                                    label: (ctx) => {
+                                        const d = ctx.raw; return `${ctx.dataset.label}: ${d.label} • ${d.x} mo, ${rupees(d.y)}, cap≈${Math.round(Math.pow(d.r / 3, 2))}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { title: { display: true, text: 'Duration (months)', color: '#cbd5e1' }, ticks: { color: '#cbd5e1' } },
+                            y: { title: { display: true, text: 'Stipend (₹/month)', color: '#cbd5e1' }, ticks: { color: '#cbd5e1' } }
                         }
                     }
-                }
-            });
+                });
+
+                // Sankey: Education -> Sector from candidates
+                const eduLevels = ['Diploma', 'Bachelor', 'Master', 'PhD'];
+                const secList = ['Technology', 'Finance', 'Healthcare', 'Marketing'];
+                const flow = {};
+                C.forEach(c => {
+                    const e = eduLevels.includes(c.education_level) ? c.education_level : 'Bachelor';
+                    (c.sector_interests || []).forEach(s => {
+                        if (!secList.includes(s)) return;
+                        const key = `${e}|${s}`; flow[key] = (flow[key] || 0) + 1;
+                    });
+                });
+                const divShare = Math.round(100 * (I.filter(i => i.diversity_focused).length) / (I.length || 1));
+                const rurShare = Math.round(100 * (I.filter(i => i.rural_friendly).length) / (I.length || 1));
+                const gaugeOpts = (label, val, color) => ({
+                    type: 'doughnut',
+                    data: { labels: [label], datasets: [{ data: [val, 100 - val], backgroundColor: [color, 'rgba(148,163,184,0.12)'], borderWidth: 0 }] },
+                    options: {
+                        cutout: '65%', rotation: -90, circumference: 180,
+                        plugins: { legend: { display: false }, centerText: { text: `${val}%`, color: '#e2e8f0', font: '700 22px Inter, Segoe UI, sans-serif' } }
+                    }
+                });
+                gaugeDiversityShare && gaugeDiversityShare.destroy();
+                gaugeDiversityShare = new Chart(document.getElementById('gaugeDiversityShare'), gaugeOpts('Diversity', divShare, '#f59e0b'));
+                gaugeRuralShare && gaugeRuralShare.destroy();
+                gaugeRuralShare = new Chart(document.getElementById('gaugeRuralShare'), gaugeOpts('Rural', rurShare, '#22c55e'));
+
+                // Skills frequency (top 10)
+                const skillCounts = {};
+                I.forEach(it => (it.skills_required || []).forEach(s => {
+                    const k = (s || '').trim();
+                    if (!k) return;
+                    skillCounts[k] = (skillCounts[k] || 0) + 1;
+                }));
+                const topSkills = Object.entries(skillCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+                const skLabs = topSkills.map(([k]) => k), skVals = topSkills.map(([, v]) => v);
+                chartSkills && chartSkills.destroy();
+                chartSkills = new Chart(document.getElementById('chartSkills'), {
+                    type: 'bar',
+                    data: { labels: skLabs, datasets: [{ label: 'Mentions', data: skVals, backgroundColor: '#60a5fa' }] },
+                    options: { plugins: { legend: { labels: { color: '#e2e8f0' } } }, scales: { x: { ticks: { color: '#cbd5e1' } }, y: { ticks: { color: '#cbd5e1' } } } }
+                });
+
+                const bins = [
+                    { label: '0-5k', min: 0, max: 4999 },
+                    { label: '5k-10k', min: 5000, max: 9999 },
+                    { label: '10k-15k', min: 10000, max: 14999 },
+                    { label: '15k-20k', min: 15000, max: 19999 },
+                    { label: '20k+', min: 20000, max: Infinity },
+                ];
+                const binCounts = bins.map(b => I.filter(i => (i.stipend || 0) >= b.min && (i.stipend || 0) <= b.max).length);
+                chartStipend && chartStipend.destroy();
+                chartStipend = new Chart(document.getElementById('chartStipend'), {
+                    type: 'bar',
+                    data: { labels: bins.map(b => b.label), datasets: [{ label: 'Internships', data: binCounts, backgroundColor: '#34d399' }] },
+                    options: { plugins: { legend: { labels: { color: '#e2e8f0' } } }, scales: { x: { ticks: { color: '#cbd5e1' } }, y: { ticks: { color: '#cbd5e1' } } } }
+                });
+
+                // Capacity by sector
+                const capSector = {};
+                I.forEach(i => capSector[i.sector] = (capSector[i.sector] || 0) + Number(i.capacity || 0));
+                const capLabs = Object.keys(capSector), capVals = Object.values(capSector);
+                chartCapacitySector && chartCapacitySector.destroy();
+                chartCapacitySector = new Chart(document.getElementById('chartCapacitySector'), {
+                    type: 'bar',
+                    data: { labels: capLabs, datasets: [{ label: 'Capacity', data: capVals, backgroundColor: '#fbbf24' }] },
+                    options: { plugins: { legend: { labels: { color: '#e2e8f0' } } }, scales: { x: { ticks: { color: '#cbd5e1' } }, y: { ticks: { color: '#cbd5e1' } } } }
+                });
+
+                // Sector × Location (stacked)
+                const locLabs = Array.from(new Set(I.map(i => i.location)));
+                const secLabs = Array.from(new Set(I.map(i => i.sector)));
+                const stackData = {}; secLabs.forEach(s => stackData[s] = locLabs.map(() => 0));
+                I.forEach(i => {
+                    const li = locLabs.indexOf(i.location);
+                    if (li >= 0) stackData[i.sector][li] += 1;
+                });
+                const stacks = secLabs.map((s, idx) => ({ label: s, data: stackData[s], backgroundColor: `hsl(${(idx * 55) % 360} 70% 55% / 0.85)` }));
+                chartSectorLocation && chartSectorLocation.destroy();
+                chartSectorLocation = new Chart(document.getElementById('chartSectorLocation'), {
+                    type: 'bar',
+                    data: { labels: locLabs, datasets: stacks },
+                    options: {
+                        responsive: true, plugins: { legend: { labels: { color: '#e2e8f0' } } },
+                        scales: { x: { stacked: true, ticks: { color: '#cbd5e1' } }, y: { stacked: true, ticks: { color: '#cbd5e1' } } }
+                    }
+                });
+
+                // Education × Sector (candidates)
+
+                const canSectors = ['Technology', 'Finance', 'Healthcare', 'Marketing'];
+                const eduSec = {}; eduLevels.forEach(e => eduSec[e] = canSectors.map(() => 0));
+                C.forEach(c => {
+                    const e = c.education_level || 'Bachelor';
+                    if (!eduSec[e]) return;
+                    (c.sector_interests || []).forEach(s => {
+                        const si = canSectors.indexOf(s);
+                        if (si >= 0) eduSec[e][si] += 1;
+                    });
+                });
+                const eduDatasets = eduLevels.map((e, idx) => ({ label: e, data: eduSec[e], backgroundColor: `hsl(${(idx * 60) % 360} 65% 60% / 0.85)` }));
+                chartEduSector && chartEduSector.destroy();
+                chartEduSector = new Chart(document.getElementById('chartEduSector'), {
+                    type: 'bar',
+                    data: { labels: canSectors, datasets: eduDatasets },
+                    options: { plugins: { legend: { labels: { color: '#e2e8f0' } } }, scales: { x: { ticks: { color: '#cbd5e1' } }, y: { ticks: { color: '#cbd5e1' } } } }
+                });
+
+                // Social category
+                const socCounts = { General: 0, SC: 0, ST: 0, OBC: 0, Other: 0 };
+                C.forEach(c => {
+                    const v = (c.social_category || '').trim();
+                    if (socCounts.hasOwnProperty(v)) socCounts[v] += 1; else socCounts.Other += 1;
+                });
+                chartSocial && chartSocial.destroy();
+                chartSocial = new Chart(document.getElementById('chartSocial'), {
+                    type: 'doughnut',
+                    data: { labels: Object.keys(socCounts), datasets: [{ data: Object.values(socCounts), backgroundColor: ['#93c5fd', '#fca5a5', '#f9a8d4', '#fdba74', '#64748b'] }] },
+                    options: { plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+                });
+
+                // Rural vs Urban
+                const rural = C.filter(x => x.from_rural_area).length;
+                const urban = C.length - rural;
+                chartRural && chartRural.destroy();
+                chartRural = new Chart(document.getElementById('chartRural'), {
+                    type: 'doughnut',
+                    data: { labels: ['Rural', 'Urban'], datasets: [{ data: [rural, urban], backgroundColor: ['#34d399', '#64748b'] }] },
+                    options: { plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+                });
+
+                // Cache for exports
+                window.__AN_CACHE__ = { analytics: A, candidates: C, internships: I };
+            } catch (e) {
+                toast('error', 'Analytics failed to load');
+            }
         }
 
-        // Candidate management
+        // Candidates
         async function loadCandidates() {
             try {
-                const response = await fetch('/api/candidates');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const tbody = document.getElementById('candidates-table');
-                    tbody.innerHTML = data.candidates.map(candidate => `
-                        <tr>
-                            <td>${candidate.id}</td>
-                            <td>${candidate.name}</td>
-                            <td><span class="badge bg-info">${candidate.education_level}</span></td>
-                            <td>${candidate.location}</td>
-                            <td>${candidate.skills.slice(0, 2).join(', ')}${candidate.skills.length > 2 ? '...' : ''}</td>
-                            <td>
-                                ${candidate.from_rural_area ? '<span class="badge bg-success">Rural</span>' : ''}
-                                ${candidate.social_category !== 'General' ? '<span class="badge bg-warning">' + candidate.social_category + '</span>' : ''}
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="viewCandidate(${candidate.id})">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-warning" onclick="editCandidate(${candidate.id})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteCandidate(${candidate.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading candidates:', error);
-            }
+                const r = await fetch('/api/candidates'); const d = await r.json();
+                if (!d.success) throw new Error('failed');
+                allCandidates = d.candidates || [];
+                filteredCandidates = allCandidates.slice();
+                renderCandidates();
+            } catch (e) { document.getElementById('candidatesTable').innerHTML = '<tr><td colspan="8" class="text-center text-muted">Failed to load</td></tr>'; }
+        }
+        function filterCandidates() {
+            const q = (document.getElementById('candSearch').value || '').toLowerCase();
+            const edu = document.getElementById('candEdu').value;
+            const sec = (document.getElementById('candSector').value || '').toLowerCase();
+            filteredCandidates = allCandidates.filter(c => {
+                const hay = [c.name, c.email, c.location, (c.skills || []).join(' '), (c.sector_interests || []).join(' ')].join(' ').toLowerCase();
+                const okQ = !q || hay.includes(q);
+                const okE = !edu || c.education_level === edu;
+                const okS = !sec || (c.sector_interests || []).some(s => (s || '').toLowerCase() === sec);
+                return okQ && okE && okS;
+            });
+            renderCandidates();
         }
 
-        // Internship management
+        function resetCandidateFilters() {
+            document.getElementById('candSearch').value = '';
+            document.getElementById('candEdu').value = '';
+            filteredCandidates = allCandidates.slice(); renderCandidates();
+        }
+
+        function renderCandidates() {
+            const tb = document.getElementById('candidatesTable');
+            if (!filteredCandidates.length) { tb.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No data</td></tr>'; return; }
+            tb.innerHTML = filteredCandidates.map((c, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${c.name || ''}</td>
+          <td>${c.email || ''}</td>
+          <td><span class="glass-badge">${c.education_level || ''}</span></td>
+          <td>${c.location || ''}</td>
+          <td>${(c.skills || []).slice(0, 3).join(', ')}${(c.skills || []).length > 3 ? '…' : ''}</td>
+          <td>
+            ${c.from_rural_area ? '<span class="badge--green">Rural</span>' : ''}
+            ${c.social_category && c.social_category !== 'General' ? '<span class="badge--yellow">' + c.social_category + '</span>' : ''}
+            ${c.first_generation_graduate ? '<span class="badge--blue">First-Gen</span>' : ''}
+          </td>
+          <td class="text-nowrap">
+            <button class="icon-btn view circle" onclick='viewCandidate(${JSON.stringify(c)})' title="View"><i class="fas fa-eye"></i></button>
+            <button class="icon-btn edit" onclick='openEditCandidate(${JSON.stringify(c)})' title="Edit"><i class="fas fa-pen"></i></button>
+            <button class="icon-btn delete" onclick='deleteCandidate(${c.id})' title="Delete"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+        }
+
+        function viewCandidate(c) {
+            document.getElementById('cmName').textContent = c.name || '';
+            document.getElementById('cmEmail').textContent = c.email || '';
+            document.getElementById('cmLocation').textContent = c.location || '';
+            document.getElementById('cmEducation').textContent = c.education_level || '';
+            document.getElementById('cmCategory').textContent = c.social_category || '';
+            const dFlags = [];
+            if (c.from_rural_area) dFlags.push('Rural');
+            if (c.first_generation_graduate) dFlags.push('First-Gen');
+            document.getElementById('cmDiversity').textContent = dFlags.join(', ') || '—';
+            document.getElementById('cmSkills').textContent = (c.skills || []).join(', ') || '—';
+            document.getElementById('cmSectors').textContent = (c.sector_interests || []).join(', ') || '—';
+            document.getElementById('btnViewCandidateShortlist').onclick = () => openAdminShortlist(c);
+            candModal.show();
+        }
+
+        const editCandidateModal = new bootstrap.Modal(document.getElementById('editCandidateModal'));
+        let editingCandidateId = null;
+
+        function openEditCandidate(c) {
+            editingCandidateId = c.id;
+            document.getElementById('ecAlert').style.display = 'none';
+            document.getElementById('ecName').value = c.name || '';
+            document.getElementById('ecEmail').value = c.email || '';
+            document.getElementById('ecEdu').value = c.education_level || 'Bachelor';
+            document.getElementById('ecLocation').value = c.location || '';
+            document.getElementById('ecSkills').value = (c.skills || []).join(', ');
+            document.getElementById('ecSectors').value = (c.sector_interests || []).join(', ');
+            document.getElementById('ecCategory').value = c.social_category || '';
+            document.getElementById('ecRuralFrom').checked = !!c.from_rural_area;
+            document.getElementById('ecFirstGen').checked = !!c.first_generation_graduate;
+            editCandidateModal.show();
+        }
+
+        document.getElementById('btnSaveCandidate').addEventListener('click', async () => {
+            const id = editingCandidateId;
+            if (!id) { return; }
+            const payload = {
+                name: document.getElementById('ecName').value.trim(),
+                email: document.getElementById('ecEmail').value.trim(),
+                education_level: document.getElementById('ecEdu').value,
+                location: document.getElementById('ecLocation').value,
+                skills: (document.getElementById('ecSkills').value || '').split(',').map(s => s.trim()).filter(Boolean),
+                sector_interests: (document.getElementById('ecSectors').value || '').split(',').map(s => s.trim()).filter(Boolean),
+                social_category: document.getElementById('ecCategory').value,
+                from_rural_area: document.getElementById('ecRuralFrom').checked,
+                first_generation_graduate: document.getElementById('ecFirstGen').checked
+            };
+            try {
+                const r = await fetch(`/api/candidates/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const d = await r.json();
+                if (!d.success) throw new Error(d.error || 'Update failed');
+                toast('success', 'Candidate updated');
+                editCandidateModal.hide();
+                refreshAll();
+            } catch (e) {
+                const al = document.getElementById('ecAlert');
+                al.textContent = e.message || 'Update failed'; al.style.display = 'block';
+            }
+        });
+
+        async function deleteCandidate(id) {
+            if (!confirm('Delete this candidate?')) return;
+            try {
+                const r = await fetch(`/api/candidates/${id}`, { method: 'DELETE' });
+                const d = await r.json();
+                if (!d.success) throw new Error(d.error || 'Delete failed');
+                toast('success', 'Candidate deleted');
+                refreshAll();
+            } catch (e) { toast('error', e.message || 'Delete failed'); }
+        }
+
+        async function openAdminShortlist(c) {
+            try {
+                const r = await fetch(`/api/shortlist?email=${encodeURIComponent(c.email || '')}`);
+                const d = await r.json();
+                const list = document.getElementById('adminShortlistList');
+                const info = document.getElementById('adminShortlistInfo');
+                list.innerHTML = ''; info.textContent = `Email: ${c.email || ''}`;
+                info.classList.add('text-success');
+                (d.items || []).forEach(it => {
+                    const row = document.createElement('div');
+                    row.className = 'list-group-item d-flex justify-content-between align-items-start bg-secondary';
+                    row.innerHTML = `
+            <div class="me-2 text-start">
+              <div class="fw-bold text-info">${it.title}</div>
+              <div class="small text-muted">${it.company} • ${it.location} • ${it.sector}</div>
+            </div>
+            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">${rupees(it.stipend || 0)}</span>
+          `;
+                    list.appendChild(row);
+                });
+                if (!(d.items || []).length) {
+                    list.innerHTML = '<div class="text-muted">No shortlisted items</div>';
+                }
+                adminShortlistDrawer.show();
+            } catch { toast('error', 'Failed to load shortlist'); }
+        }
+
+        // Internships
         async function loadInternships() {
             try {
-                const response = await fetch('/api/internships');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const tbody = document.getElementById('internships-table');
-                    tbody.innerHTML = data.internships.map(internship => `
-                        <tr>
-                            <td>${internship.id}</td>
-                            <td>${internship.title}</td>
-                            <td>${internship.company}</td>
-                            <td><span class="badge bg-primary">${internship.sector}</span></td>
-                            <td>${internship.location}</td>
-                            <td><span class="badge bg-info">${internship.capacity}</span></td>
-                            <td>₹${internship.stipend.toLocaleString()}</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="viewInternship(${internship.id})">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-warning" onclick="editInternship(${internship.id})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteInternship(${internship.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading internships:', error);
-            }
+                const r = await fetch('/api/internships'); const d = await r.json();
+                if (!d.success) throw new Error('failed');
+                allInternships = d.internships || [];
+                filteredInternships = allInternships.slice();
+                renderInternships();
+            } catch (e) { document.getElementById('internshipsTable').innerHTML = '<tr><td colspan="8" class="text-center text-muted">Failed to load</td></tr>'; }
         }
-
-        // Modal functions
-        function showAddCandidateModal() {
-            new bootstrap.Modal(document.getElementById('addCandidateModal')).show();
+        function filterInternships() {
+            const q = (document.getElementById('intSearch').value || '').toLowerCase();
+            const sector = document.getElementById('intSector').value.toLowerCase();
+            filteredInternships = allInternships.filter(i => {
+                const hay = [i.title, i.company, i.location, i.sector].join(' ').toLowerCase();
+                const okQ = !q || hay.includes(q);
+                const okS = !sector || (i.sector || '').toLowerCase() === sector;
+                return okQ && okS;
+            });
+            renderInternships();
+        }
+        function resetInternshipFilters() {
+            document.getElementById('intSearch').value = '';
+            document.getElementById('intSector').value = '';
+            filteredInternships = allInternships.slice(); renderInternships();
+        }
+        function renderInternships() {
+            const tb = document.getElementById('internshipsTable');
+            if (!filteredInternships.length) { tb.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No data</td></tr>'; return; }
+            tb.innerHTML = filteredInternships.map((i, c) => `
+        <tr>
+          <td>${c + 1}</td>
+          <td>${i.title || ''}</td>
+          <td>${i.company || ''}</td>
+          <td><span class="badge bg-primary-subtle text-primary-emphasis">${i.sector || ''}</span></td>
+          <td>${i.location || ''}</td>
+          <td><span class="badge bg-info-subtle text-info-emphasis">${i.capacity || 0}</span></td>
+          <td>${rupees(i.stipend || 0)}</td>
+          <td class="text-nowrap">
+  <button class="icon-btn view circle" onclick="viewInternship(${i.id})" title="View"><i class="fas fa-eye"></i></button>
+  <button class="icon-btn edit" onclick='openEditInternship(${JSON.stringify(i)})' title="Edit"><i class="fas fa-pen"></i></button>
+  <button class="icon-btn delete" onclick="deleteInternship(${i.id})" title="Delete"><i class="fas fa-trash"></i></button>
+</td>
+        </tr>
+      `).join('');
         }
 
         function showAddInternshipModal() {
-            // Implementation for internship modal
-            alert('Add Internship modal would open here');
+            document.getElementById('aiAlert').style.display = 'none';
+            ['aiTitle', 'aiCompany', 'aiSkills', 'aiCapacity', 'aiDuration', 'aiStipend'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            document.getElementById('aiSector').value = '';
+            document.getElementById('aiLocation').value = '';
+            document.getElementById('aiEducation').value = '';
+            document.getElementById('aiRural').checked = false;
+            document.getElementById('aiDiversity').checked = false;
+            addInternshipModal.show();
         }
 
-        // Utility functions
-        function refreshData() {
-            loadDashboardData();
-            if (document.getElementById('candidates-section').style.display !== 'none') {
-                loadCandidates();
+        document.getElementById('btnAddInternship').addEventListener('click', async () => {
+            const alertBox = document.getElementById('aiAlert');
+            const payload = {
+                title: document.getElementById('aiTitle').value.trim(),
+                company: document.getElementById('aiCompany').value.trim(),
+                sector: document.getElementById('aiSector').value,
+                location: document.getElementById('aiLocation').value,
+                skills_required: (document.getElementById('aiSkills').value || '').split(',').map(s => s.trim()).filter(Boolean),
+                education_level: document.getElementById('aiEducation').value,
+                capacity: Number(document.getElementById('aiCapacity').value || 0),
+                duration_months: Number(document.getElementById('aiDuration').value || 0),
+                stipend: Number(document.getElementById('aiStipend').value || 0),
+                rural_friendly: document.getElementById('aiRural').checked,
+                diversity_focused: document.getElementById('aiDiversity').checked
+            };
+            alertBox.style.display = 'none'; alertBox.textContent = '';
+            if (!payload.title || !payload.company || !payload.sector || !payload.location || !payload.skills_required.length || !payload.education_level || !payload.capacity || !payload.duration_months) {
+                alertBox.textContent = 'Please fill all required fields.'; alertBox.style.display = 'block'; return;
             }
-            if (document.getElementById('internships-section').style.display !== 'none') {
-                loadInternships();
+            try {
+                const r = await fetch('/api/internships', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const d = await r.json();
+                if (!d.success) throw new Error(d.error || 'Create failed');
+                toast('success', 'Internship created');
+                addInternshipModal.hide();
+                refreshAll();
+            } catch (e) {
+                alertBox.textContent = e.message || 'Create failed'; alertBox.style.display = 'block';
+            }
+        });
+
+        async function viewInternship(id) {
+            try {
+                const r = await fetch(`/api/internships/${id}`);
+                const d = await r.json();
+                if (!d.success) throw new Error(d.error || 'Not found');
+                const i = d.internship || {};
+                document.getElementById('imTitle').textContent = i.title || 'Internship';
+                document.getElementById('imCompany').textContent = i.company || '';
+                document.getElementById('imLocation').textContent = i.location || '-';
+                document.getElementById('imEducation').textContent = i.education_level || '-';
+                document.getElementById('imDuration').textContent = (i.duration_months || 0) + ' months';
+                document.getElementById('imStipend').textContent = rupees(i.stipend || 0) + '/month';
+                document.getElementById('imCapacity').textContent = (i.capacity || 0) + ' positions';
+                document.getElementById('imSector').textContent = i.sector || '-';
+                document.getElementById('imBadges').innerHTML = `
+      ${i.rural_friendly ? '<span class="badge bg-success-subtle text-success-emphasis border border-success-subtle"><i class="fas fa-tree"></i> Rural Friendly</span>' : ''}
+      ${i.diversity_focused ? '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="fas fa-users"></i> Diversity Focused</span>' : ''}
+    `;
+                document.getElementById('imSkills').innerHTML = (i.skills_required || []).map(s => `<span class="badge-soft">${s}</span>`).join('');
+                internshipModal.show();
+            } catch (e) { toast('error', e.message || 'Failed to load'); }
+        }
+
+        function openEditInternship(i) {
+            editingInternshipId = i.id;
+            document.getElementById('eiAlert').style.display = 'none';
+            document.getElementById('eiTitle').value = i.title || '';
+            document.getElementById('eiCompany').value = i.company || '';
+            document.getElementById('eiSector').value = i.sector || 'Technology';
+            document.getElementById('eiLocation').value = i.location || 'Bangalore';
+            document.getElementById('eiSkills').value = (i.skills_required || []).join(', ');
+            document.getElementById('eiEducation').value = i.education_level || 'Bachelor';
+            document.getElementById('eiCapacity').value = Number(i.capacity || 0);
+            document.getElementById('eiDuration').value = Number(i.duration_months || 0);
+            document.getElementById('eiStipend').value = Number(i.stipend || 0);
+            document.getElementById('eiRural').checked = !!i.rural_friendly;
+            document.getElementById('eiDiversity').checked = !!i.diversity_focused;
+            editInternshipModal.show();
+        }
+
+        document.getElementById('btnSaveInternship').addEventListener('click', async () => {
+            const id = editingInternshipId;
+            if (!id) { return; }
+            const alertBox = document.getElementById('eiAlert');
+            alertBox.style.display = 'none'; alertBox.textContent = '';
+            const payload = {
+                title: document.getElementById('eiTitle').value.trim(),
+                company: document.getElementById('eiCompany').value.trim(),
+                sector: document.getElementById('eiSector').value,
+                location: document.getElementById('eiLocation').value,
+                skills_required: (document.getElementById('eiSkills').value || '').split(',').map(s => s.trim()).filter(Boolean),
+                education_level: document.getElementById('eiEducation').value,
+                capacity: Number(document.getElementById('eiCapacity').value || 0),
+                duration_months: Number(document.getElementById('eiDuration').value || 0),
+                stipend: Number(document.getElementById('eiStipend').value || 0),
+                rural_friendly: document.getElementById('eiRural').checked,
+                diversity_focused: document.getElementById('eiDiversity').checked
+            };
+            try {
+                const r = await fetch(`/api/internships/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const d = await r.json();
+                if (!d.success) throw new Error(d.error || 'Update failed');
+                toast('success', 'Internship updated');
+                editInternshipModal.hide();
+                refreshAll();
+            } catch (e) {
+                alertBox.textContent = e.message || 'Update failed'; alertBox.style.display = 'block';
+            }
+        });
+
+        async function deleteInternship(id) {
+            if (!confirm('Delete this internship?')) return;
+            try {
+                const r = await fetch(`/api/internships/${id}`, { method: 'DELETE' });
+                const d = await r.json();
+                if (!d.success) throw new Error(d.error || 'Delete failed');
+                toast('success', 'Internship deleted');
+                refreshAll();
+            } catch (e) { toast('error', e.message || 'Delete failed'); }
+        }
+
+        // Add Candidate (quick)
+        function showAddCandidateModal() { new bootstrap.Modal(document.getElementById('addCandidateModal')).show(); }
+        async function addCandidateQuick() {
+            const payload = {
+                name: document.getElementById('acName').value.trim(),
+                email: document.getElementById('acEmail').value.trim(),
+                education_level: document.getElementById('acEdu').value,
+                location: document.getElementById('acLocation').value,
+                skills: (document.getElementById('acSkills').value || '').split(',').map(s => s.trim()).filter(Boolean),
+                sector_interests: (document.getElementById('acSectors').value || '').split(',').map(s => s.trim()).filter(Boolean),
+                social_category: document.getElementById('acCategory').value,
+                from_rural_area: document.getElementById('acRuralFrom').checked,
+                first_generation_graduate: document.getElementById('acFirstGen').checked
+            };
+            const alertBox = document.getElementById('acAlert');
+            alertBox.style.display = 'none'; alertBox.textContent = '';
+            if (!payload.name || !payload.education_level || !payload.location || !payload.skills.length || !payload.sector_interests.length) {
+                toast('warning', 'Fill all required fields'); return;
+            }
+            try {
+                const r = await fetch('/api/candidates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const d = await r.json();
+                if (!d.success) {
+                    alertBox.textContent = d.error || 'Could not add candidate';
+                    alertBox.style.display = 'block';
+                    return;
+                }
+                // Handle "Candidate already exists" success message case
+                if (d.message && d.message.toLowerCase().includes('exists')) {
+                    alertBox.textContent = 'A candidate with this email already exists.';
+                    alertBox.style.display = 'block';
+                    return;
+                }
+                toast('success', 'Candidate added');
+                document.getElementById('addCandidateModal').querySelector('.btn-close').click();
+                refreshAll();
+            } catch (e) {
+                alertBox.textContent = e.message || 'Add failed';
+                alertBox.style.display = 'block';
             }
         }
 
-        // Placeholder functions for future implementation
-        function addCandidate() {
-            alert('Add candidate functionality would be implemented here');
+        // Settings stubs
+        async function putSettings(updated) {
+            const payload = mergeSettings(SETTINGS_CACHE || SETTINGS_DEFAULTS, updated);
+            const r = await fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok || d.success === false) {
+                throw new Error(d.error || `HTTP ${r.status}`);
+            }
+            SETTINGS_CACHE = payload;
         }
 
-        function viewCandidate(id) {
-            alert(`View candidate ${id} details`);
-        }
-
-        function editCandidate(id) {
-            alert(`Edit candidate ${id}`);
-        }
-
-        function deleteCandidate(id) {
-            if (confirm('Are you sure you want to delete this candidate?')) {
-                alert(`Delete candidate ${id}`);
+        async function saveWeights() {
+            const btn = event?.currentTarget;
+            try {
+                btn && (btn.disabled = true, btn.textContent = 'Saving...');
+                const ui = collectSettingsFromUI();
+                await putSettings({ weights: ui.weights });
+                await loadSettings();             // refresh sliders from saved values
+                toast('success', 'Matching weights saved');
+            } catch (e) {
+                toast('error', `Failed to save weights: ${e.message || e}`);
+            } finally {
+                btn && (btn.disabled = false, btn.textContent = 'Save');
             }
         }
 
-        function viewInternship(id) {
-            alert(`View internship ${id} details`);
-        }
+        async function saveLanguage() {
+            const btn = event?.currentTarget;
+            try {
+                btn && (btn.disabled = true, btn.textContent = 'Saving...');
+                const ui = collectSettingsFromUI();
+                const r = await fetch('/api/settings', {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language: ui.language })
+                });
+                const d = await r.json();
+                if (!d.success) throw new Error(d.error || 'Save failed');
 
-        function editInternship(id) {
-            alert(`Edit internship ${id}`);
-        }
-
-        function deleteInternship(id) {
-            if (confirm('Are you sure you want to delete this internship?')) {
-                alert(`Delete internship ${id}`);
+                await loadSettings();                       // keep UI in sync
+                const code = d.settings.language.default;
+                localStorage.setItem('app.lang', code); // notifies other tabs via storage event
+                await i18n.setLang(code);               // apply immediately on this page
+                toast('success', 'Language preferences saved');
+            } catch (e) {
+                toast('error', `Failed to save language: ${e.message || e}`);
+            } finally {
+                btn && (btn.disabled = false, btn.textContent = 'Save');
             }
         }
 
-        function loadAnalytics() {
-            // Load analytics charts
-            alert('Analytics charts would be loaded here');
+        async function refreshAll() {
+            try {
+                await Promise.all([
+                    loadStatus(),
+                    loadDashboard(),
+                    loadCandidates(),
+                    loadInternships(),
+                    loadAnalytics()
+                ]);
+                toast('success', 'Refreshed');
+            } catch (e) {
+                console.error('refreshAll failed', e);
+                toast('error', 'Refresh failed');
+            }
+        }
+        document.getElementById('btnRefreshAll').addEventListener('click', async () => {
+            clearCache();
+            await refreshAll();
+        });
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await loadSettings();  // populate sliders + language UI
+                loadStatus();
+                loadDashboard();
+                showSection('dashboard', document.querySelector('.nav-link.active'));
+            } catch (e) {
+                console.warn('Init settings/lang failed', e);
+                // fallback to defaults
+                await loadSettings();
+                loadStatus();
+                loadDashboard();
+                showSection('dashboard', document.querySelector('.nav-link.active'));
+            }
+        });
+
+        document.getElementById('btnSidebarToggle').addEventListener('click', toggleSidebar);
+        const floatToggle = document.getElementById('sideFloatToggle');
+        if (floatToggle) {
+            floatToggle.addEventListener('click', toggleSidebar);
+            floatToggle.style.display = 'inline-block';
         }
 
-        function updateWeights() {
-            alert('Matching weights would be updated here');
+        async function importFromDefaultCSV(mode = 'append') {
+            try {
+                const r = await fetch('/api/admin/import_csv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode })
+                });
+                const d = await r.json();
+                if (!r.ok || !d.success) throw new Error(d.error || 'Import failed');
+                document.getElementById('csvImportStatus').textContent = `Imported ${d.imported} rows (${d.mode}).`;
+                toast('success', `Imported ${d.imported} internships (${d.mode})`);
+                clearCache();
+                await refreshAll();
+            } catch (e) {
+                toast('error', e.message || 'Import failed');
+            }
         }
 
-        function updateLanguageSettings() {
-            alert('Language settings would be updated here');
+        async function uploadCSV(mode = 'append') {
+            try {
+                const inp = document.getElementById('csvFile');
+                if (!inp.files || !inp.files[0]) { toast('warning', 'Select a CSV file'); return; }
+                const fd = new FormData();
+                fd.append('file', inp.files[0]);
+                fd.append('mode', mode);
+                const r = await fetch('/api/admin/upload_csv', { method: 'POST', body: fd });
+                const d = await r.json();
+                if (!r.ok || !d.success) throw new Error(d.error || 'Upload failed');
+                document.getElementById('csvImportStatus').textContent = `Imported ${d.imported} rows (${d.mode}) from upload.`;
+                toast('success', `Imported ${d.imported} internships (${d.mode})`);
+                inp.value = '';
+                clearCache();
+                await refreshAll();
+            } catch (e) {
+                toast('error', e.message || 'Upload failed');
+            }
         }
     </script>
 </body>
-</html>
 
+</html>

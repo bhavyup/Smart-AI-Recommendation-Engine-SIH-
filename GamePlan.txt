@@ -1,0 +1,4229 @@
+ok so i am creating a AI Smart Recommendation Engine which takes user data in a form and recommends them internship according to their preferences and data on the PM Internship Portal
+i am gonna send you all the files i have in the  message below and i want you to understand the whole codebase because later we are gonna make some changes to this implementation and create a better app altogether
+understand and remember all the code . i  am not an expert but you are a senior developer . I need production ready guidance.
+NOTE: all codes are separate files.
+
+this is app.py
+```
+from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
+import json
+from smart_allocation_engine import SmartAllocationEngine
+from language_support import LanguageSupport
+
+app = Flask(__name__)
+CORS(app)
+
+# Initialize the AI engine and language support
+ai_engine = SmartAllocationEngine()
+ai_engine.load_sample_data()
+language_support = LanguageSupport()
+
+@app.route('/')
+def landing():
+    """Landing page with navigation options"""
+    return render_template('landing.html')
+
+@app.route('/candidate')
+def index():
+    """Main page with candidate input form"""
+    return render_template('index.html')
+
+@app.route('/admin')
+def admin_dashboard():
+    """Admin dashboard for system management"""
+    return render_template('admin_dashboard.html')
+
+@app.route('/api/recommendations', methods=['POST'])
+def get_recommendations():
+    """API endpoint to get internship recommendations"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['name', 'education_level', 'skills', 'location', 'sector_interests']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        # Process candidate data
+        candidate_info = {
+            'name': data['name'],
+            'education_level': data['education_level'],
+            'skills': data['skills'] if isinstance(data['skills'], list) else [data['skills']],
+            'location': data['location'],
+            'sector_interests': data['sector_interests'] if isinstance(data['sector_interests'], list) else [data['sector_interests']],
+            'prefers_rural': data.get('prefers_rural', False),
+            'from_rural_area': data.get('from_rural_area', False),
+            'social_category': data.get('social_category', ''),
+            'first_generation_graduate': data.get('first_generation_graduate', False)
+        }
+        
+        # Get recommendations
+        recommendations = ai_engine.get_recommendations(candidate_info, top_n=5)
+        
+        # Add candidate to system
+        candidate_id = ai_engine.add_candidate(candidate_info)
+        
+        return jsonify({
+            'success': True,
+            'candidate_id': candidate_id,
+            'recommendations': recommendations
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/internships')
+def get_internships():
+    """Get all available internships"""
+    return jsonify({
+        'success': True,
+        'internships': ai_engine.internship_data
+    })
+
+@app.route('/api/candidates')
+def get_candidates():
+    """Get all registered candidates"""
+    return jsonify({
+        'success': True,
+        'candidates': ai_engine.candidate_data
+    })
+
+@app.route('/api/languages')
+def get_languages():
+    """Get supported languages"""
+    return jsonify({
+        'success': True,
+        'languages': language_support.get_supported_languages()
+    })
+
+@app.route('/api/translations/<language_code>')
+def get_translations(language_code):
+    """Get translations for a specific language"""
+    language_support.set_language(language_code)
+    return jsonify({
+        'success': True,
+        'translations': language_support.get_all_texts()
+    })
+
+@app.route('/api/analytics')
+def get_analytics():
+    """Get analytics data for dashboard"""
+    try:
+        # Calculate analytics data
+        total_candidates = len(ai_engine.candidate_data)
+        total_internships = len(ai_engine.internship_data)
+        
+        # Calculate diversity metrics
+        diversity_candidates = sum(1 for c in ai_engine.candidate_data 
+                                 if c.get('from_rural_area') or 
+                                    c.get('social_category') in ['SC', 'ST', 'OBC'] or
+                                    c.get('first_generation_graduate'))
+        
+        diversity_rate = (diversity_candidates / total_candidates * 100) if total_candidates > 0 else 0
+        
+        # Calculate sector distribution
+        sector_counts = {}
+        for internship in ai_engine.internship_data:
+            sector = internship['sector']
+            sector_counts[sector] = sector_counts.get(sector, 0) + 1
+        
+        # Calculate location distribution
+        location_counts = {}
+        for candidate in ai_engine.candidate_data:
+            location = candidate['location']
+            location_counts[location] = location_counts.get(location, 0) + 1
+        
+        # Calculate education distribution
+        education_counts = {}
+        for candidate in ai_engine.candidate_data:
+            education = candidate['education_level']
+            education_counts[education] = education_counts.get(education, 0) + 1
+        
+        return jsonify({
+            'success': True,
+            'analytics': {
+                'total_candidates': total_candidates,
+                'total_internships': total_internships,
+                'diversity_rate': round(diversity_rate, 1),
+                'sector_distribution': sector_counts,
+                'location_distribution': location_counts,
+                'education_distribution': education_counts
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/candidates', methods=['POST'])
+def add_candidate():
+    """Add a new candidate"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['name', 'education_level', 'skills', 'location', 'sector_interests']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        # Process candidate data
+        candidate_info = {
+            'name': data['name'],
+            'education_level': data['education_level'],
+            'skills': data['skills'] if isinstance(data['skills'], list) else [data['skills']],
+            'location': data['location'],
+            'sector_interests': data['sector_interests'] if isinstance(data['sector_interests'], list) else [data['sector_interests']],
+            'prefers_rural': data.get('prefers_rural', False),
+            'from_rural_area': data.get('from_rural_area', False),
+            'social_category': data.get('social_category', ''),
+            'first_generation_graduate': data.get('first_generation_graduate', False)
+        }
+        
+        # Add candidate to system
+        candidate_id = ai_engine.add_candidate(candidate_info)
+        
+        return jsonify({
+            'success': True,
+            'candidate_id': candidate_id,
+            'message': 'Candidate added successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
+```
+
+this is demo.py
+```
+#!/usr/bin/env python3
+"""
+Demo script for AI Smart Allocation Engine
+Tests the system with sample candidate data
+"""
+
+from smart_allocation_engine import SmartAllocationEngine
+import json
+
+def main():
+    print("🚀 AI Smart Allocation Engine - Demo")
+    print("=" * 50)
+    
+    # Initialize the engine
+    engine = SmartAllocationEngine()
+    engine.load_sample_data()
+    
+    # Sample candidates for testing
+    test_candidates = [
+        {
+            'name': 'Priya Sharma',
+            'education_level': 'Bachelor',
+            'skills': ['Python', 'JavaScript', 'React', 'SQL'],
+            'location': 'Bangalore',
+            'sector_interests': ['Technology', 'Software Development'],
+            'prefers_rural': False,
+            'from_rural_area': False,
+            'social_category': 'General',
+            'first_generation_graduate': False
+        },
+        {
+            'name': 'Raj Kumar',
+            'education_level': 'Master',
+            'skills': ['Python', 'Machine Learning', 'Statistics', 'Data Analysis'],
+            'location': 'Mumbai',
+            'sector_interests': ['Technology', 'Data Science'],
+            'prefers_rural': False,
+            'from_rural_area': True,
+            'social_category': 'OBC',
+            'first_generation_graduate': True
+        },
+        {
+            'name': 'Sunita Devi',
+            'education_level': 'Bachelor',
+            'skills': ['Digital Marketing', 'Social Media', 'Content Writing'],
+            'location': 'Delhi',
+            'sector_interests': ['Marketing', 'Communication'],
+            'prefers_rural': True,
+            'from_rural_area': True,
+            'social_category': 'SC',
+            'first_generation_graduate': True
+        }
+    ]
+    
+    print(f"📊 Loaded {len(engine.internship_data)} internships")
+    print(f"👥 Testing with {len(test_candidates)} sample candidates\n")
+    
+    # Test each candidate
+    for i, candidate in enumerate(test_candidates, 1):
+        print(f"🧪 Test Case {i}: {candidate['name']}")
+        print("-" * 30)
+        
+        # Get recommendations
+        recommendations = engine.get_recommendations(candidate, top_n=3)
+        
+        print(f"📋 Profile: {candidate['education_level']} in {', '.join(candidate['sector_interests'])}")
+        print(f"📍 Location: {candidate['location']}")
+        print(f"🛠️ Skills: {', '.join(candidate['skills'])}")
+        
+        if candidate['from_rural_area']:
+            print("🌾 From rural area")
+        if candidate['social_category'] != 'General':
+            print(f"👥 Social category: {candidate['social_category']}")
+        if candidate['first_generation_graduate']:
+            print("🎓 First generation graduate")
+        
+        print(f"\n🎯 Top {len(recommendations)} Recommendations:")
+        
+        for j, rec in enumerate(recommendations, 1):
+            internship = rec['internship']
+            scores = rec['scores']
+            reasons = rec['match_reasons']
+            
+            print(f"\n  {j}. {internship['title']} at {internship['company']}")
+            print(f"     📍 {internship['location']} | 💰 ₹{internship['stipend']:,}/month")
+            print(f"     🎯 Match Score: {scores['overall']:.1%}")
+            print(f"     📊 Breakdown: Skills({scores['skill_match']:.1%}) | Location({scores['location_match']:.1%}) | Education({scores['education_match']:.1%})")
+            print(f"     ✅ Reasons: {', '.join(reasons)}")
+            
+            if internship['rural_friendly']:
+                print(f"     🌾 Rural-friendly opportunity")
+            if internship['diversity_focused']:
+                print(f"     👥 Diversity-focused program")
+        
+        print("\n" + "="*50 + "\n")
+    
+    # Add candidates to the system
+    print("💾 Adding candidates to the system...")
+    for candidate in test_candidates:
+        candidate_id = engine.add_candidate(candidate)
+        print(f"✅ Added {candidate['name']} with ID: {candidate_id}")
+    
+    print(f"\n📈 System Statistics:")
+    print(f"   • Total candidates: {len(engine.candidate_data)}")
+    print(f"   • Total internships: {len(engine.internship_data)}")
+    
+    # Test API-like functionality
+    print(f"\n🔧 Testing API functionality...")
+    
+    # Test skill matching
+    test_skills = ['Python', 'JavaScript']
+    internship_skills = ['Python', 'JavaScript', 'React', 'SQL']
+    skill_score = engine.calculate_skill_match_score(test_skills, internship_skills)
+    print(f"   • Skill matching test: {skill_score:.1%} match")
+    
+    # Test diversity scoring
+    test_candidate = test_candidates[1]  # Raj Kumar
+    test_internship = engine.internship_data[0]
+    diversity_score = engine.calculate_diversity_score(test_candidate, test_internship)
+    print(f"   • Diversity scoring test: {diversity_score:.1%} bonus")
+    
+    print(f"\n🎉 Demo completed successfully!")
+    print(f"🌐 To run the web application: python app.py")
+    print(f"📱 Then visit: http://localhost:5000")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+this is dummy_app.py
+```
+from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
+import json
+from self_test import SmartAllocationEngine
+from language_support import LanguageSupport
+
+app = Flask(__name__)
+CORS(app)
+
+# Initialize the AI engine and language support
+ai_engine = SmartAllocationEngine()
+ai_engine.load_internship_data_from_csv(r"D:\sih\internships_dummy_dataset.csv")
+
+language_support = LanguageSupport()
+
+@app.route('/')
+def landing():
+    """Landing page with navigation options"""
+    return render_template('landing.html')
+
+@app.route('/candidate')
+def index():
+    """Main page with candidate input form"""
+    return render_template('index.html')
+
+@app.route('/admin')
+def admin_dashboard():
+    """Admin dashboard for system management"""
+    return render_template('admin_dashboard.html')
+
+@app.route('/api/recommendations', methods=['POST'])
+def get_recommendations():
+    """API endpoint to get internship recommendations"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['name', 'education_level', 'skills', 'location', 'sector_interests']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        # Process candidate data
+        candidate_info = {
+            'name': data['name'],
+            'education_level': data['education_level'],
+            'skills': data['skills'] if isinstance(data['skills'], list) else [data['skills']],
+            'location': data['location'],
+            'sector_interests': data['sector_interests'] if isinstance(data['sector_interests'], list) else [data['sector_interests']],
+            'prefers_rural': data.get('prefers_rural', False),
+            'from_rural_area': data.get('from_rural_area', False),
+            'social_category': data.get('social_category', ''),
+            'first_generation_graduate': data.get('first_generation_graduate', False)
+        }
+        
+        # Get recommendations
+        recommendations = ai_engine.get_recommendations(candidate_info, top_n=5)
+        
+        # Add candidate to system
+        candidate_id = ai_engine.add_candidate(candidate_info)
+        
+        return jsonify({
+            'success': True,
+            'candidate_id': candidate_id,
+            'recommendations': recommendations
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/internships')
+def get_internships():
+    """Get all available internships"""
+    return jsonify({
+        'success': True,
+        'internships': ai_engine.internship_data
+    })
+
+@app.route('/api/candidates')
+def get_candidates():
+    """Get all registered candidates"""
+    return jsonify({
+        'success': True,
+        'candidates': ai_engine.candidate_data
+    })
+
+@app.route('/api/languages')
+def get_languages():
+    """Get supported languages"""
+    return jsonify({
+        'success': True,
+        'languages': language_support.get_supported_languages()
+    })
+
+@app.route('/api/translations/<language_code>')
+def get_translations(language_code):
+    """Get translations for a specific language"""
+    language_support.set_language(language_code)
+    return jsonify({
+        'success': True,
+        'translations': language_support.get_all_texts()
+    })
+
+@app.route('/api/analytics')
+def get_analytics():
+    """Get analytics data for dashboard"""
+    try:
+        # Calculate analytics data
+        total_candidates = len(ai_engine.candidate_data)
+        total_internships = len(ai_engine.internship_data)
+        
+        # Calculate diversity metrics
+        diversity_candidates = sum(1 for c in ai_engine.candidate_data 
+                                 if c.get('from_rural_area') or 
+                                    c.get('social_category') in ['SC', 'ST', 'OBC'] or
+                                    c.get('first_generation_graduate'))
+        
+        diversity_rate = (diversity_candidates / total_candidates * 100) if total_candidates > 0 else 0
+        
+        # Calculate sector distribution
+        sector_counts = {}
+        for internship in ai_engine.internship_data:
+            sector = internship['sector']
+            sector_counts[sector] = sector_counts.get(sector, 0) + 1
+        
+        # Calculate location distribution
+        location_counts = {}
+        for candidate in ai_engine.candidate_data:
+            location = candidate['location']
+            location_counts[location] = location_counts.get(location, 0) + 1
+        
+        # Calculate education distribution
+        education_counts = {}
+        for candidate in ai_engine.candidate_data:
+            education = candidate['education_level']
+            education_counts[education] = education_counts.get(education, 0) + 1
+        
+        return jsonify({
+            'success': True,
+            'analytics': {
+                'total_candidates': total_candidates,
+                'total_internships': total_internships,
+                'diversity_rate': round(diversity_rate, 1),
+                'sector_distribution': sector_counts,
+                'location_distribution': location_counts,
+                'education_distribution': education_counts
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/candidates', methods=['POST'])
+def add_candidate():
+    """Add a new candidate or return existing candidate by email"""
+    try:
+        data = request.get_json()
+
+        # Validate required fields
+        required_fields = ['name', 'email', 'education_level', 'skills', 'location', 'sector_interests']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+
+        # Check if candidate already exists by email
+        existing_candidate = ai_engine.get_candidate_by_email(data['email'])
+        if existing_candidate:
+            candidate_info = existing_candidate
+            candidate_id = existing_candidate['id']
+            message = "Candidate already exists"
+        else:
+            # Process new candidate data
+            candidate_info = {
+                'name': data['name'],
+                'email': data['email'],
+                'education_level': data['education_level'],
+                'skills': data['skills'] if isinstance(data['skills'], list) else [data['skills']],
+                'location': data['location'],
+                'sector_interests': data['sector_interests'] if isinstance(data['sector_interests'], list) else [data['sector_interests']],
+                'prefers_rural': data.get('prefers_rural', False),
+                'from_rural_area': data.get('from_rural_area', False),
+                'social_category': data.get('social_category', ''),
+                'first_generation_graduate': data.get('first_generation_graduate', False)
+            }
+            candidate_id = ai_engine.add_candidate(candidate_info)
+            message = "Candidate added successfully"
+
+        return jsonify({
+            'success': True,
+            'candidate_id': candidate_id,
+            'message': message
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
+```
+
+this is language_support.py
+```
+"""
+Regional Language Support Module
+Provides translation and localization capabilities for the AI Smart Allocation Engine
+"""
+
+import json
+from typing import Dict, Any
+
+class LanguageSupport:
+    """Handles regional language support and translations"""
+    
+    def __init__(self):
+        self.current_language = 'en'
+        self.translations = self._load_translations()
+        
+    def _load_translations(self) -> Dict[str, Dict[str, str]]:
+        """Load translation files for different languages"""
+        return {
+            'en': {
+                'app_title': 'AI Smart Allocation Engine',
+                'app_subtitle': 'PM Internship Scheme - Find Your Perfect Internship Match',
+                'candidate_info': 'Candidate Information',
+                'full_name': 'Full Name',
+                'education_level': 'Education Level',
+                'skills': 'Skills',
+                'skills_placeholder': 'e.g., Python, JavaScript, Data Analysis',
+                'location': 'Preferred Location',
+                'sector_interests': 'Sector Interests',
+                'sector_placeholder': 'e.g., Technology, Finance, Healthcare',
+                'social_category': 'Social Category',
+                'prefers_rural': 'Prefer Rural Opportunities',
+                'from_rural_area': 'From Rural Area',
+                'first_generation': 'First Generation Graduate',
+                'find_matches': 'Find My Internship Matches',
+                'loading_text': 'AI is analyzing your profile and finding the best matches...',
+                'recommendations_title': 'Your Top Internship Matches',
+                'match_score': 'Match',
+                'location_label': 'Location',
+                'duration_label': 'Duration',
+                'stipend_label': 'Stipend',
+                'education_label': 'Education',
+                'sector_label': 'Sector',
+                'capacity_label': 'Capacity',
+                'required_skills': 'Required Skills',
+                'why_match': 'Why This Match?',
+                'view_details': 'View Details',
+                'apply_now': 'Apply Now',
+                'rural_friendly': 'Rural Friendly',
+                'diversity_focused': 'Diversity Focused',
+                'strong_skill_alignment': 'Strong skill alignment',
+                'good_skill_match': 'Good skill match',
+                'perfect_location_match': 'Perfect location match',
+                'good_location_fit': 'Good location fit',
+                'education_matches': 'Education level matches',
+                'sector_interests_match': 'Matches your sector interests',
+                'diversity_support': 'Supports diversity and inclusion'
+            },
+            'hi': {
+                'app_title': 'AI स्मार्ट आवंटन इंजन',
+                'app_subtitle': 'पीएम इंटर्नशिप योजना - अपना सही इंटर्नशिप मैच खोजें',
+                'candidate_info': 'उम्मीदवार की जानकारी',
+                'full_name': 'पूरा नाम',
+                'education_level': 'शिक्षा स्तर',
+                'skills': 'कौशल',
+                'skills_placeholder': 'जैसे, Python, JavaScript, Data Analysis',
+                'location': 'पसंदीदा स्थान',
+                'sector_interests': 'क्षेत्र रुचि',
+                'sector_placeholder': 'जैसे, Technology, Finance, Healthcare',
+                'social_category': 'सामाजिक श्रेणी',
+                'prefers_rural': 'ग्रामीण अवसर पसंद करें',
+                'from_rural_area': 'ग्रामीण क्षेत्र से',
+                'first_generation': 'पहली पीढ़ी का स्नातक',
+                'find_matches': 'मेरे इंटर्नशिप मैच खोजें',
+                'loading_text': 'AI आपकी प्रोफ़ाइल का विश्लेषण कर रहा है और सबसे अच्छे मैच खोज रहा है...',
+                'recommendations_title': 'आपके शीर्ष इंटर्नशिप मैच',
+                'match_score': 'मैच',
+                'location_label': 'स्थान',
+                'duration_label': 'अवधि',
+                'stipend_label': 'वजीफा',
+                'education_label': 'शिक्षा',
+                'sector_label': 'क्षेत्र',
+                'capacity_label': 'क्षमता',
+                'required_skills': 'आवश्यक कौशल',
+                'why_match': 'यह मैच क्यों?',
+                'view_details': 'विवरण देखें',
+                'apply_now': 'अभी आवेदन करें',
+                'rural_friendly': 'ग्रामीण अनुकूल',
+                'diversity_focused': 'विविधता केंद्रित',
+                'strong_skill_alignment': 'मजबूत कौशल संरेखण',
+                'good_skill_match': 'अच्छा कौशल मैच',
+                'perfect_location_match': 'सही स्थान मैच',
+                'good_location_fit': 'अच्छा स्थान फिट',
+                'education_matches': 'शिक्षा स्तर मैच',
+                'sector_interests_match': 'आपकी क्षेत्र रुचि से मैच',
+                'diversity_support': 'विविधता और समावेशन का समर्थन'
+            },
+            'ta': {
+                'app_title': 'AI ஸ்மார்ட் ஒதுக்கீடு இயந்திரம்',
+                'app_subtitle': 'பிஎம் பயிற்சி திட்டம் - உங்கள் சரியான பயிற்சி பொருத்தத்தைக் கண்டறியவும்',
+                'candidate_info': 'விண்ணப்பதாரர் தகவல்',
+                'full_name': 'முழு பெயர்',
+                'education_level': 'கல்வி நிலை',
+                'skills': 'திறன்கள்',
+                'skills_placeholder': 'எ.கா., Python, JavaScript, Data Analysis',
+                'location': 'விருப்பமான இடம்',
+                'sector_interests': 'துறை ஆர்வங்கள்',
+                'sector_placeholder': 'எ.கா., Technology, Finance, Healthcare',
+                'social_category': 'சமூக வகை',
+                'prefers_rural': 'கிராமிய வாய்ப்புகளை விரும்புகிறேன்',
+                'from_rural_area': 'கிராமிய பகுதியிலிருந்து',
+                'first_generation': 'முதல் தலைமுறை பட்டதாரி',
+                'find_matches': 'எனது பயிற்சி பொருத்தங்களைக் கண்டறியவும்',
+                'loading_text': 'AI உங்கள் சுயவிவரத்தை பகுப்பாய்வு செய்து சிறந்த பொருத்தங்களைக் கண்டறிகிறது...',
+                'recommendations_title': 'உங்கள் முதன்மை பயிற்சி பொருத்தங்கள்',
+                'match_score': 'பொருத்தம்',
+                'location_label': 'இடம்',
+                'duration_label': 'காலம்',
+                'stipend_label': 'ஊதியம்',
+                'education_label': 'கல்வி',
+                'sector_label': 'துறை',
+                'capacity_label': 'திறன்',
+                'required_skills': 'தேவையான திறன்கள்',
+                'why_match': 'இந்த பொருத்தம் ஏன்?',
+                'view_details': 'விவரங்களைக் காண்க',
+                'apply_now': 'இப்போது விண்ணப்பிக்கவும்',
+                'rural_friendly': 'கிராமிய நட்பு',
+                'diversity_focused': 'பன்முகத்தன்மை மையமாக',
+                'strong_skill_alignment': 'வலுவான திறன் சீரமைப்பு',
+                'good_skill_match': 'நல்ல திறன் பொருத்தம்',
+                'perfect_location_match': 'சரியான இடம் பொருத்தம்',
+                'good_location_fit': 'நல்ல இடம் பொருத்தம்',
+                'education_matches': 'கல்வி நிலை பொருத்தம்',
+                'sector_interests_match': 'உங்கள் துறை ஆர்வங்களுடன் பொருத்தம்',
+                'diversity_support': 'பன்முகத்தன்மை மற்றும் உள்ளடக்கத்தை ஆதரிக்கிறது'
+            }
+        }
+        
+    def set_language(self, language_code: str):
+        """Set the current language"""
+        if language_code in self.translations:
+            self.current_language = language_code
+        else:
+            print(f"Language {language_code} not supported. Using English.")
+            self.current_language = 'en'
+            
+    def get_text(self, key: str) -> str:
+        """Get translated text for a given key"""
+        return self.translations.get(self.current_language, {}).get(key, key)
+        
+    def get_all_texts(self) -> Dict[str, str]:
+        """Get all translated texts for current language"""
+        return self.translations.get(self.current_language, {})
+        
+    def translate_candidate_data(self, candidate_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Translate candidate data labels"""
+        translated = candidate_data.copy()
+        
+        # Translate education levels
+        education_translations = {
+            'en': {'Diploma': 'Diploma', 'Bachelor': 'Bachelor\'s Degree', 'Master': 'Master\'s Degree', 'PhD': 'PhD'},
+            'hi': {'Diploma': 'डिप्लोमा', 'Bachelor': 'स्नातक', 'Master': 'स्नातकोत्तर', 'PhD': 'पीएचडी'},
+            'ta': {'Diploma': 'டிப்ளோமா', 'Bachelor': 'இளங்கலை', 'Master': 'முதுகலை', 'PhD': 'முனைவர்'}
+        }
+        
+        if 'education_level' in translated:
+            translated['education_level'] = education_translations.get(
+                self.current_language, 
+                education_translations['en']
+            ).get(translated['education_level'], translated['education_level'])
+            
+        return translated
+        
+    def translate_internship_data(self, internship_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Translate internship data"""
+        translated = internship_data.copy()
+        
+        # Translate sectors
+        sector_translations = {
+            'en': {'Technology': 'Technology', 'Finance': 'Finance', 'Healthcare': 'Healthcare', 'Marketing': 'Marketing'},
+            'hi': {'Technology': 'प्रौद्योगिकी', 'Finance': 'वित्त', 'Healthcare': 'स्वास्थ्य सेवा', 'Marketing': 'मार्केटिंग'},
+            'ta': {'Technology': 'தொழில்நுட்பம்', 'Finance': 'நிதி', 'Healthcare': 'சுகாதாரம்', 'Marketing': 'விற்பனை'}
+        }
+        
+        if 'sector' in translated:
+            translated['sector'] = sector_translations.get(
+                self.current_language,
+                sector_translations['en']
+            ).get(translated['sector'], translated['sector'])
+            
+        return translated
+        
+    def get_supported_languages(self) -> Dict[str, str]:
+        """Get list of supported languages"""
+        return {
+            'en': 'English',
+            'hi': 'हिन्दी',
+            'ta': 'தமிழ்'
+        }
+        
+    def format_currency(self, amount: int) -> str:
+        """Format currency based on current language"""
+        if self.current_language == 'hi':
+            return f"₹{amount:,}"
+        elif self.current_language == 'ta':
+            return f"₹{amount:,}"
+        else:
+            return f"₹{amount:,}"
+            
+    def format_duration(self, months: int) -> str:
+        """Format duration based on current language"""
+        if self.current_language == 'hi':
+            return f"{months} महीने"
+        elif self.current_language == 'ta':
+            return f"{months} மாதங்கள்"
+        else:
+            return f"{months} months"
+```
+
+this is requirements.txt
+```
+flask==2.3.3
+flask-cors==4.0.0
+pandas==2.1.1
+numpy==1.24.3
+scikit-learn==1.3.0
+joblib==1.3.2
+python-dotenv==1.0.0
+gunicorn==21.2.0
+```
+
+this is self_test.py
+```
+import pandas as pd
+import ast
+import json
+from typing import List, Dict, Any
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import joblib
+
+class SmartAllocationEngine:
+    def __init__(self):
+        # Candidate and internship storage
+        self.candidate_data: List[Dict[str, Any]] = []
+        self.candidate_map: Dict[str, Dict[str, Any]] = {}  # email -> candidate
+        self.internship_data: List[Dict[str, Any]] = []
+
+        # TF-IDF for skill matching
+        self.vectorizer = TfidfVectorizer(stop_words='english')
+        self.skill_matrix = None
+
+    # ---------------- Candidate Persistence ----------------
+    def add_candidate(self, candidate_info: dict):
+        email = candidate_info.get('email')
+        if email in self.candidate_map:
+            return self.candidate_map[email]['id']
+
+        candidate_id = len(self.candidate_data) + 1
+        candidate_info['id'] = candidate_id
+        self.candidate_data.append(candidate_info)
+        if email:
+            self.candidate_map[email] = candidate_info
+        return candidate_id
+
+    def get_candidate_by_email(self, email: str):
+        return self.candidate_map.get(email)
+
+    def save_candidates(self, filepath='candidates.json'):
+        with open(filepath, 'w') as f:
+            json.dump(self.candidate_data, f, indent=2)
+
+    def load_candidates(self, filepath='candidates.json'):
+        try:
+            with open(filepath, 'r') as f:
+                self.candidate_data = json.load(f)
+                self.candidate_map = {c['email']: c for c in self.candidate_data if 'email' in c}
+        except FileNotFoundError:
+            self.candidate_data = []
+            self.candidate_map = {}
+            
+    # Add this inside SmartAllocationEngine class
+    def make_json_serializable(self, obj):
+        """
+    Recursively convert sets to lists so that the object can be JSON-serialized.
+    """
+        if isinstance(obj, set):
+            return list(obj)
+        elif isinstance(obj, dict):
+            return {k: self.make_json_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self.make_json_serializable(i) for i in obj]
+        else:
+            return obj
+
+
+    # ---------------- Internship Data ----------------
+    def load_internship_data_from_csv(self, filepath: str):
+        df = pd.read_csv(r"D:\sih\internships_dummy_dataset.csv")
+        self.internship_data = []
+        skill_texts = []
+
+        for _, row in df.iterrows():
+            skills = ast.literal_eval(row['skills_required']) if isinstance(row['skills_required'], str) else []
+            internship = {
+                'id': int(row['id']),
+                'title': row['title'],
+                'company': row['company'],
+                'sector': row['sector'].lower(),
+                'location': row['location'].lower(),
+                'skills_required': skills,
+                'skills_set': set(skill.lower() for skill in skills),
+                'education_level': row['education_level'],
+                'capacity': int(row['capacity']),
+                'duration_months': int(row['duration_months']),
+                'stipend': int(row['stipend']),
+                'rural_friendly': bool(row['rural_friendly']),
+                'diversity_focused': bool(row['diversity_focused'])
+            }
+            self.internship_data.append(internship)
+            skill_texts.append(' '.join(skills).lower())
+
+        # Build TF-IDF matrix for all internships
+        if skill_texts:
+            self.skill_matrix = self.vectorizer.fit_transform(skill_texts)
+
+    # ---------------- Matching Scores ----------------
+    def calculate_skill_match_score(self, candidate_skills, internship):
+        if not candidate_skills or not internship['skills_required']:
+            return 0.0
+        candidate_text = ' '.join(candidate_skills).lower()
+        internship_index = internship['id'] - 1  # assuming IDs start at 1
+        internship_vector = self.skill_matrix[internship_index]
+        candidate_vector = self.vectorizer.transform([candidate_text])
+        score = cosine_similarity(candidate_vector, internship_vector)[0][0]
+        return float(score)
+
+    def calculate_location_preference_score(self, candidate_location, internship_location,
+                                           candidate_prefers_rural, internship_rural_friendly):
+        if candidate_location.lower() == internship_location.lower():
+            return 1.0
+        if candidate_prefers_rural and internship_rural_friendly:
+            return 0.8
+        return 0.6
+
+    def calculate_education_match_score(self, candidate_education, internship_education):
+        levels = {'Diploma': 1, 'Bachelor': 2, 'Master': 3, 'PhD': 4}
+        c = levels.get(candidate_education, 2)
+        i = levels.get(internship_education, 2)
+        if c == i: return 1.0
+        if c > i: return 0.8
+        return 0.4
+
+    def calculate_sector_interest_score(self, candidate_interests, internship_sector):
+        if not candidate_interests: return 0.5
+        return 1.0 if internship_sector.lower() in [s.lower() for s in candidate_interests] else 0.3
+
+    def calculate_diversity_score(self, candidate_info, internship_info):
+        score = 0.0
+        if internship_info.get('diversity_focused', False):
+            score += 0.3
+        if candidate_info.get('from_rural_area', False):
+            score += 0.2
+        if candidate_info.get('social_category') in ['SC', 'ST', 'OBC']:
+            score += 0.2
+        if candidate_info.get('first_generation_graduate', False):
+            score += 0.1
+        return min(score, 1.0)
+
+    # ---------------- Recommendations ----------------
+    def get_recommendations(self, candidate_info, top_n=5):
+        recommendations = []
+
+        for internship in self.internship_data:
+            skill_score = self.calculate_skill_match_score(candidate_info.get('skills', []), internship)
+            location_score = self.calculate_location_preference_score(
+                candidate_info.get('location', ''),
+                internship['location'],
+                candidate_info.get('prefers_rural', False),
+                internship['rural_friendly']
+            )
+            education_score = self.calculate_education_match_score(
+                candidate_info.get('education_level', 'Bachelor'),
+                internship['education_level']
+            )
+            sector_score = self.calculate_sector_interest_score(
+                candidate_info.get('sector_interests', []),
+                internship['sector']
+            )
+            diversity_score = self.calculate_diversity_score(candidate_info, internship)
+
+            weights = {'skill': 0.3, 'location': 0.2, 'education': 0.2, 'sector': 0.15, 'diversity': 0.15}
+            overall_score = (
+                skill_score * weights['skill'] +
+                location_score * weights['location'] +
+                education_score * weights['education'] +
+                sector_score * weights['sector'] +
+                diversity_score * weights['diversity']
+            )
+
+            recommendations.append({
+                'internship': internship,
+                'scores': {
+                    'overall': round(overall_score, 3),
+                    'skill_match': round(skill_score, 3),
+                    'location_match': round(location_score, 3),
+                    'education_match': round(education_score, 3),
+                    'sector_match': round(sector_score, 3),
+                    'diversity_bonus': round(diversity_score, 3)
+                },
+                'match_reasons': self._generate_match_reasons(skill_score, location_score, education_score, sector_score, diversity_score)
+            })
+
+        recommendations.sort(key=lambda x: x['scores']['overall'], reverse=True)
+    
+    # Convert all sets in recommendations to lists before returning
+        return self.make_json_serializable(recommendations[:top_n])
+
+
+    def _generate_match_reasons(self, skill_score, location_score, education_score, sector_score, diversity_score):
+        reasons = []
+        if skill_score > 0.7: reasons.append("Strong skill alignment")
+        elif skill_score > 0.4: reasons.append("Good skill match")
+        if location_score > 0.8: reasons.append("Perfect location match")
+        elif location_score > 0.6: reasons.append("Good location fit")
+        if education_score > 0.8: reasons.append("Education level matches")
+        if sector_score > 0.8: reasons.append("Matches your sector interests")
+        if diversity_score > 0.3: reasons.append("Supports diversity and inclusion")
+        return reasons
+
+    # ---------------- Model Persistence ----------------
+    def save_model(self, filepath):
+        joblib.dump({
+            'candidate_data': self.candidate_data,
+            'internship_data': self.internship_data
+        }, filepath)
+
+    def load_model(self, filepath):
+        data = joblib.load(filepath)
+        self.candidate_data = data['candidate_data']
+        self.internship_data = data['internship_data']
+```
+
+this is smart_allocation_engine.py
+```
+import os
+import pandas as pd
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import StandardScaler
+import joblib
+from typing import List, Dict, Any
+import json
+
+class SmartAllocationEngine:
+    """
+    AI-based Smart Allocation Engine for PM Internship Scheme
+    Matches candidates with internship opportunities using ML algorithms
+    """
+    
+    def __init__(self):
+        self.candidate_data = []
+        self.internship_data = []
+        self.vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
+        self.scaler = StandardScaler()
+        self.model_trained = False
+        
+    def load_sample_data(self):
+        """Load sample internship and candidate data"""
+        
+        # Sample internship data
+        self.internship_data = [
+            {
+                'id': 1,
+                'title': 'Software Development Intern',
+                'company': 'TechCorp India',
+                'sector': 'Technology',
+                'location': 'Bangalore',
+                'skills_required': ['Python', 'JavaScript', 'React', 'SQL'],
+                'education_level': 'Bachelor',
+                'capacity': 5,
+                'duration_months': 6,
+                'stipend': 15000,
+                'rural_friendly': True,
+                'diversity_focused': True
+            },
+            {
+                'id': 2,
+                'title': 'Data Science Intern',
+                'company': 'DataAnalytics Ltd',
+                'sector': 'Technology',
+                'location': 'Mumbai',
+                'skills_required': ['Python', 'Machine Learning', 'Statistics', 'Pandas'],
+                'education_level': 'Master',
+                'capacity': 3,
+                'duration_months': 4,
+                'stipend': 20000,
+                'rural_friendly': False,
+                'diversity_focused': True
+            },
+            {
+                'id': 3,
+                'title': 'Marketing Intern',
+                'company': 'BrandBuilders',
+                'sector': 'Marketing',
+                'location': 'Delhi',
+                'skills_required': ['Digital Marketing', 'Social Media', 'Content Writing', 'Analytics'],
+                'education_level': 'Bachelor',
+                'capacity': 4,
+                'duration_months': 3,
+                'stipend': 12000,
+                'rural_friendly': True,
+                'diversity_focused': False
+            },
+            {
+                'id': 4,
+                'title': 'Finance Intern',
+                'company': 'FinTech Solutions',
+                'sector': 'Finance',
+                'location': 'Chennai',
+                'skills_required': ['Excel', 'Financial Analysis', 'Accounting', 'PowerBI'],
+                'education_level': 'Bachelor',
+                'capacity': 2,
+                'duration_months': 5,
+                'stipend': 18000,
+                'rural_friendly': False,
+                'diversity_focused': True
+            },
+            {
+                'id': 5,
+                'title': 'Healthcare Research Intern',
+                'company': 'MedResearch Institute',
+                'sector': 'Healthcare',
+                'location': 'Hyderabad',
+                'skills_required': ['Research', 'Data Analysis', 'Medical Knowledge', 'Python'],
+                'education_level': 'Master',
+                'capacity': 3,
+                'duration_months': 6,
+                'stipend': 16000,
+                'rural_friendly': True,
+                'diversity_focused': True
+            }
+        ]
+        
+        print(f"Loaded {len(self.internship_data)} sample internships")
+        
+    def add_candidate(self, candidate_info: Dict[str, Any]):
+        """Add a new candidate to the system"""
+        candidate_id = len(self.candidate_data) + 1
+        candidate_info['id'] = candidate_id
+        self.candidate_data.append(candidate_info)
+        return candidate_id
+        
+    def calculate_skill_match_score(self, candidate_skills: List[str], 
+                                  internship_skills: List[str]) -> float:
+        """Calculate skill matching score between candidate and internship"""
+        if not candidate_skills or not internship_skills:
+            return 0.0
+            
+        candidate_skills_lower = [skill.lower() for skill in candidate_skills]
+        internship_skills_lower = [skill.lower() for skill in internship_skills]
+        
+        matches = sum(1 for skill in internship_skills_lower 
+                     if skill in candidate_skills_lower)
+        
+        return matches / len(internship_skills_lower)
+        
+    def calculate_location_preference_score(self, candidate_location: str, 
+                                         internship_location: str,
+                                         candidate_prefers_rural: bool,
+                                         internship_rural_friendly: bool) -> float:
+        """Calculate location preference score"""
+        if candidate_location.lower() == internship_location.lower():
+            return 1.0
+            
+        # Bonus for rural-friendly internships if candidate prefers rural
+        if candidate_prefers_rural and internship_rural_friendly:
+            return 0.8
+            
+        # Same state/region bonus (simplified)
+        return 0.6
+        
+    def calculate_diversity_score(self, candidate_info: Dict[str, Any], 
+                               internship_info: Dict[str, Any]) -> float:
+        """Calculate diversity and affirmative action score"""
+        score = 0.0
+        
+        # Check if internship is diversity-focused
+        if internship_info.get('diversity_focused', False):
+            score += 0.3
+            
+        # Check candidate's background for affirmative action
+        if candidate_info.get('from_rural_area', False):
+            score += 0.2
+            
+        if candidate_info.get('social_category') in ['SC', 'ST', 'OBC']:
+            score += 0.2
+            
+        if candidate_info.get('first_generation_graduate', False):
+            score += 0.1
+            
+        return min(score, 1.0)
+        
+    def calculate_education_match_score(self, candidate_education: str, 
+                                     internship_education: str) -> float:
+        """Calculate education level matching score"""
+        education_levels = {
+            'Diploma': 1,
+            'Bachelor': 2,
+            'Master': 3,
+            'PhD': 4
+        }
+        
+        candidate_level = education_levels.get(candidate_education, 2)
+        internship_level = education_levels.get(internship_education, 2)
+        
+        # Exact match gets highest score
+        if candidate_level == internship_level:
+            return 1.0
+            
+        # Candidate with higher education gets good score
+        if candidate_level > internship_level:
+            return 0.8
+            
+        # Candidate with lower education gets lower score
+        return 0.4
+        
+    def calculate_sector_interest_score(self, candidate_interests: List[str], 
+                                      internship_sector: str) -> float:
+        """Calculate sector interest matching score"""
+        if not candidate_interests:
+            return 0.5  # Neutral score if no interests specified
+            
+        if internship_sector.lower() in [interest.lower() for interest in candidate_interests]:
+            return 1.0
+            
+        return 0.3
+        
+    def get_recommendations(self, candidate_info: Dict[str, Any], 
+                          top_n: int = 5) -> List[Dict[str, Any]]:
+        """Get top internship recommendations for a candidate"""
+        
+        if not self.internship_data:
+            self.load_sample_data()
+            
+        recommendations = []
+        
+        for internship in self.internship_data:
+            # Calculate various matching scores
+            skill_score = self.calculate_skill_match_score(
+                candidate_info.get('skills', []),
+                internship['skills_required']
+            )
+            
+            location_score = self.calculate_location_preference_score(
+                candidate_info.get('location', ''),
+                internship['location'],
+                candidate_info.get('prefers_rural', False),
+                internship['rural_friendly']
+            )
+            
+            education_score = self.calculate_education_match_score(
+                candidate_info.get('education_level', 'Bachelor'),
+                internship['education_level']
+            )
+            
+            sector_score = self.calculate_sector_interest_score(
+                candidate_info.get('sector_interests', []),
+                internship['sector']
+            )
+            
+            diversity_score = self.calculate_diversity_score(
+                candidate_info,
+                internship
+            )
+            
+            # Calculate weighted overall score
+            weights = {
+                'skill': 0.3,
+                'location': 0.2,
+                'education': 0.2,
+                'sector': 0.15,
+                'diversity': 0.15
+            }
+            
+            overall_score = (
+                skill_score * weights['skill'] +
+                location_score * weights['location'] +
+                education_score * weights['education'] +
+                sector_score * weights['sector'] +
+                diversity_score * weights['diversity']
+            )
+            
+            recommendation = {
+                'internship': internship,
+                'scores': {
+                    'overall': round(overall_score, 3),
+                    'skill_match': round(skill_score, 3),
+                    'location_match': round(location_score, 3),
+                    'education_match': round(education_score, 3),
+                    'sector_match': round(sector_score, 3),
+                    'diversity_bonus': round(diversity_score, 3)
+                },
+                'match_reasons': self._generate_match_reasons(
+                    skill_score, location_score, education_score, 
+                    sector_score, diversity_score
+                )
+            }
+            
+            recommendations.append(recommendation)
+            
+        # Sort by overall score and return top N
+        recommendations.sort(key=lambda x: x['scores']['overall'], reverse=True)
+        return recommendations[:top_n]
+        
+    def _generate_match_reasons(self, skill_score: float, location_score: float,
+                              education_score: float, sector_score: float,
+                              diversity_score: float) -> List[str]:
+        """Generate human-readable reasons for the match"""
+        reasons = []
+        
+        if skill_score > 0.7:
+            reasons.append("Strong skill alignment")
+        elif skill_score > 0.4:
+            reasons.append("Good skill match")
+            
+        if location_score > 0.8:
+            reasons.append("Perfect location match")
+        elif location_score > 0.6:
+            reasons.append("Good location fit")
+            
+        if education_score > 0.8:
+            reasons.append("Education level matches")
+            
+        if sector_score > 0.8:
+            reasons.append("Matches your sector interests")
+            
+        if diversity_score > 0.3:
+            reasons.append("Supports diversity and inclusion")
+            
+        return reasons
+        
+    def save_model(self, filepath: str):
+        """Save the trained model"""
+        model_data = {
+            'candidate_data': self.candidate_data,
+            'internship_data': self.internship_data,
+            'model_trained': self.model_trained
+        }
+        joblib.dump(model_data, filepath)
+        
+    def load_model(self, filepath: str):
+        """Load a saved model"""
+        model_data = joblib.load(filepath)
+        self.candidate_data = model_data['candidate_data']
+        self.internship_data = model_data['internship_data']
+        self.model_trained = model_data['model_trained']
+```
+
+this is start.py
+```
+#!/usr/bin/env python3
+"""
+Quick Start Script for AI Smart Allocation Engine
+Launches the web application and provides usage instructions
+"""
+
+import subprocess
+import sys
+import webbrowser
+import time
+import os
+
+def check_dependencies():
+    """Check if required packages are installed"""
+    try:
+        import flask
+        import pandas
+        import numpy
+        import sklearn
+        print("✅ All dependencies are installed")
+        return True
+    except ImportError as e:
+        print(f"❌ Missing dependency: {e}")
+        print("Please run: pip install -r requirements.txt")
+        return False
+
+def start_application():
+    """Start the Flask web application"""
+    print("🚀 Starting AI Smart Allocation Engine...")
+    print("=" * 50)
+    
+    if not check_dependencies():
+        return False
+    
+    print("📱 Web application will be available at: http://localhost:5000")
+    print("🌐 Opening browser in 3 seconds...")
+    print("⏹️  Press Ctrl+C to stop the server")
+    print("=" * 50)
+    
+    # Wait a moment then open browser
+    time.sleep(3)
+    try:
+        webbrowser.open('http://localhost:8888')
+    except:
+        print("Could not open browser automatically. Please visit http://localhost:8888")
+    
+    # Start the Flask app
+    try:
+        subprocess.run([sys.executable, 'app.py'])
+    except KeyboardInterrupt:
+        print("\n👋 Application stopped. Thank you for using AI Smart Allocation Engine!")
+        return True
+    except Exception as e:
+        print(f"❌ Error starting application: {e}")
+        return False
+
+def show_usage_guide():
+    """Show usage guide for the application"""
+    print("\n📖 Usage Guide:")
+    print("-" * 30)
+    print("1. Fill out the candidate information form")
+    print("2. Include your skills, education, and preferences")
+    print("3. Specify any diversity considerations")
+    print("4. Click 'Find My Internship Matches'")
+    print("5. Review AI-powered recommendations")
+    print("6. Apply to internships that interest you")
+    print("\n🎯 Features:")
+    print("• AI-powered matching algorithm")
+    print("• Mobile-responsive design")
+    print("• Affirmative action support")
+    print("• Regional language support")
+    print("• Real-time recommendations")
+
+def main():
+    """Main function"""
+    print("🎯 AI Smart Allocation Engine - Quick Start")
+    print("PM Internship Scheme - Ministry of Corporate Affairs")
+    print("=" * 60)
+    
+    # Check if we're in the right directory
+    if not os.path.exists('app.py'):
+        print("❌ Please run this script from the project root directory")
+        print("   Make sure app.py is in the current directory")
+        return
+    
+    # Show usage guide
+    show_usage_guide()
+    
+    # Start the application
+    print("\n🚀 Starting application...")
+    start_application()
+
+if __name__ == "__main__":
+    main()
+```
+
+this is /template/index.html
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Allocation Engine - PM Internship Scheme</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            padding: 30px;
+            max-width: 1200px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        .form-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .recommendations-section {
+            display: none;
+        }
+
+        .recommendation-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .recommendation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .match-score {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .company-name {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .internship-title {
+            color: #374151;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .internship-details {
+            color: #6b7280;
+            margin-bottom: 15px;
+        }
+
+        .skills-tags {
+            margin-bottom: 15px;
+        }
+
+        .skill-tag {
+            background: #e0f2fe;
+            color: var(--primary-color);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            margin-right: 8px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        .match-reasons {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .match-reasons h6 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .reason-item {
+            color: #374151;
+            margin-bottom: 5px;
+        }
+
+        .reason-item i {
+            color: var(--success-color);
+            margin-right: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner-border {
+            color: var(--primary-color);
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+
+        .diversity-badge {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .rural-friendly {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .form-section {
+                padding: 20px;
+            }
+            
+            .recommendation-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <div class="header">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h1><i class="fas fa-brain"></i> AI Smart Allocation Engine</h1>
+                    <div>
+                        <a href="/" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                        <a href="/admin" class="btn btn-outline-primary">
+                            <i class="fas fa-cog"></i> Admin Dashboard
+                        </a>
+                    </div>
+                </div>
+                <p>PM Internship Scheme - Find Your Perfect Internship Match</p>
+            </div>
+
+            <div class="form-section">
+                <h3 class="mb-4"><i class="fas fa-user-edit"></i> Candidate Information</h3>
+                <form id="candidateForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Education Level *</label>
+                            <select class="form-select" id="education_level" name="education_level" required>
+                                <option value="">Select Education Level</option>
+                                <option value="Diploma">Diploma</option>
+                                <option value="Bachelor">Bachelor's Degree</option>
+                                <option value="Master">Master's Degree</option>
+                                <option value="PhD">PhD</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Skills * (comma-separated)</label>
+                            <input type="text" class="form-control" id="skills" name="skills" 
+                                   placeholder="e.g., Python, JavaScript, Data Analysis" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Preferred Location *</label>
+                            <select class="form-select" id="location" name="location" required>
+                                <option value="">Select Location</option>
+                                <option value="Bangalore">Bangalore</option>
+                                <option value="Mumbai">Mumbai</option>
+                                <option value="Delhi">Delhi</option>
+                                <option value="Chennai">Chennai</option>
+                                <option value="Hyderabad">Hyderabad</option>
+                                <option value="Pune">Pune</option>
+                                <option value="Kolkata">Kolkata</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Sector Interests * (comma-separated)</label>
+                            <input type="text" class="form-control" id="sector_interests" name="sector_interests" 
+                                   placeholder="e.g., Technology, Finance, Healthcare" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Social Category</label>
+                            <select class="form-select" id="social_category" name="social_category">
+                                <option value="">Select Category</option>
+                                <option value="General">General</option>
+                                <option value="SC">SC</option>
+                                <option value="ST">ST</option>
+                                <option value="OBC">OBC</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="prefers_rural" name="prefers_rural">
+                                <label class="form-check-label" for="prefers_rural">
+                                    Prefer Rural Opportunities
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="from_rural_area" name="from_rural_area">
+                                <label class="form-check-label" for="from_rural_area">
+                                    From Rural Area
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="first_generation_graduate" name="first_generation_graduate">
+                                <label class="form-check-label" for="first_generation_graduate">
+                                    First Generation Graduate
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search"></i> Find My Internship Matches
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="loadingSection" class="loading" style="display: none;">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3">AI is analyzing your profile and finding the best matches...</p>
+            </div>
+
+            <div id="recommendationsSection" class="recommendations-section">
+                <h3 class="mb-4"><i class="fas fa-star"></i> Your Top Internship Matches</h3>
+                <div id="recommendationsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('candidateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Show loading
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('recommendationsSection').style.display = 'none';
+            
+            // Collect form data
+            const formData = new FormData(this);
+            const data = {
+                name: formData.get('name'),
+                education_level: formData.get('education_level'),
+                skills: formData.get('skills').split(',').map(s => s.trim()).filter(s => s),
+                location: formData.get('location'),
+                sector_interests: formData.get('sector_interests').split(',').map(s => s.trim()).filter(s => s),
+                social_category: formData.get('social_category'),
+                prefers_rural: formData.get('prefers_rural') === 'on',
+                from_rural_area: formData.get('from_rural_area') === 'on',
+                first_generation_graduate: formData.get('first_generation_graduate') === 'on'
+            };
+            
+            try {
+                const response = await fetch('/api/recommendations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayRecommendations(result.recommendations);
+                } else {
+                    showError(result.error || 'An error occurred while processing your request');
+                }
+            } catch (error) {
+                showError('Network error. Please try again.');
+            }
+            
+            // Hide loading
+            document.getElementById('loadingSection').style.display = 'none';
+        });
+        
+        function displayRecommendations(recommendations) {
+            const container = document.getElementById('recommendationsContainer');
+            container.innerHTML = '';
+            
+            if (recommendations.length === 0) {
+                container.innerHTML = '<div class="alert alert-warning">No matching internships found. Please try adjusting your preferences.</div>';
+                document.getElementById('recommendationsSection').style.display = 'block';
+                return;
+            }
+            
+            recommendations.forEach((rec, index) => {
+                const internship = rec.internship;
+                const scores = rec.scores;
+                const reasons = rec.match_reasons;
+                
+                const card = document.createElement('div');
+                card.className = 'recommendation-card';
+                card.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <div class="match-score">
+                                <i class="fas fa-percentage"></i> ${Math.round(scores.overall * 100)}% Match
+                            </div>
+                        </div>
+                        <div>
+                            ${internship.rural_friendly ? '<span class="rural-friendly"><i class="fas fa-tree"></i> Rural Friendly</span>' : ''}
+                            ${internship.diversity_focused ? '<span class="diversity-badge"><i class="fas fa-users"></i> Diversity Focused</span>' : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="company-name">${internship.company}</div>
+                    <div class="internship-title">${internship.title}</div>
+                    
+                    <div class="internship-details">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-map-marker-alt"></i> Location:</strong> ${internship.location}<br>
+                                <strong><i class="fas fa-calendar"></i> Duration:</strong> ${internship.duration_months} months<br>
+                                <strong><i class="fas fa-rupee-sign"></i> Stipend:</strong> ₹${internship.stipend.toLocaleString()}/month
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-graduation-cap"></i> Education:</strong> ${internship.education_level}<br>
+                                <strong><i class="fas fa-building"></i> Sector:</strong> ${internship.sector}<br>
+                                <strong><i class="fas fa-users"></i> Capacity:</strong> ${internship.capacity} positions
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="skills-tags">
+                        <strong>Required Skills:</strong><br>
+                        ${internship.skills_required.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                    </div>
+                    
+                    <div class="match-reasons">
+                        <h6><i class="fas fa-lightbulb"></i> Why This Match?</h6>
+                        ${reasons.map(reason => `<div class="reason-item"><i class="fas fa-check"></i> ${reason}</div>`).join('')}
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-info-circle"></i> View Details
+                        </button>
+                        <button class="btn btn-success btn-sm ms-2">
+                            <i class="fas fa-paper-plane"></i> Apply Now
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+            
+            document.getElementById('recommendationsSection').style.display = 'block';
+        }
+        
+        function showError(message) {
+            const container = document.getElementById('recommendationsContainer');
+            container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+            document.getElementById('recommendationsSection').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
+```
+
+this is /template/landing.html
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Allocation Engine - PM Internship Scheme</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --light-bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .hero-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 60px 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+
+        .btn-hero {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            border: none;
+            border-radius: 15px;
+            padding: 15px 40px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-hero:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, var(--warning-color), #d97706);
+        }
+
+        .features-section {
+            background: white;
+            padding: 80px 0;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--dark-color);
+        }
+
+        .feature-description {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .stats-section {
+            background: var(--primary-color);
+            color: white;
+            padding: 60px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-content {
+                padding: 40px 20px;
+            }
+            
+            .btn-hero {
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <i class="fas fa-brain"></i> AI Smart Allocation Engine
+            </h1>
+            <p class="hero-subtitle">
+                PM Internship Scheme - Ministry of Corporate Affairs<br>
+                Intelligent matching system for internship opportunities
+            </p>
+            
+            <div class="d-flex flex-wrap justify-content-center">
+                <a href="/candidate" class="btn btn-hero">
+                    <i class="fas fa-user-graduate"></i> Find My Internship
+                </a>
+                <a href="/admin" class="btn btn-hero btn-admin">
+                    <i class="fas fa-cog"></i> Admin Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features-section">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-4 fw-bold text-primary">Key Features</h2>
+                <p class="lead text-muted">Advanced AI-powered internship matching system</p>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h3 class="feature-title">AI-Powered Matching</h3>
+                        <p class="feature-description">
+                            Advanced machine learning algorithms analyze skills, preferences, and qualifications 
+                            to provide accurate internship recommendations.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3 class="feature-title">Mobile Responsive</h3>
+                        <p class="feature-description">
+                            Fully responsive design that works seamlessly across all devices - desktop, 
+                            tablet, and mobile phones.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3 class="feature-title">Diversity & Inclusion</h3>
+                        <p class="feature-description">
+                            Supports affirmative action with special considerations for rural candidates, 
+                            social categories, and first-generation graduates.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <h3 class="feature-title">Multi-Language Support</h3>
+                        <p class="feature-description">
+                            Available in English, Hindi, and Tamil with framework for additional 
+                            regional language support.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="feature-title">Analytics Dashboard</h3>
+                        <p class="feature-description">
+                            Comprehensive admin dashboard with real-time analytics, candidate management, 
+                            and system performance metrics.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3 class="feature-title">Real-Time Processing</h3>
+                        <p class="feature-description">
+                            Instant recommendations with detailed scoring explanations and 
+                            match reasoning for transparency.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number">5</div>
+                        <div class="stat-label">Internship Sectors</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number">89%</div>
+                        <div class="stat-label">Average Match Score</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number">3</div>
+                        <div class="stat-label">Languages Supported</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">System Availability</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-4">
+        <div class="container">
+            <p class="mb-0">
+                <i class="fas fa-brain"></i> AI Smart Allocation Engine | 
+                PM Internship Scheme | Ministry of Corporate Affairs
+            </p>
+            <p class="mb-0 mt-2">
+                <small>Built for Smart India Hackathon 2024</small>
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+```
+
+this is /template/admin_dashboard.html
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Allocation Engine - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1f2937;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light-bg);
+        }
+
+        .sidebar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            min-height: 100vh;
+            position: fixed;
+            width: 250px;
+            z-index: 1000;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 5px 10px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            border: none;
+            border-radius: 10px;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color), #d97706);
+            border: none;
+            border-radius: 10px;
+        }
+
+        .badge {
+            border-radius: 20px;
+            padding: 8px 15px;
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            border-radius: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="p-3">
+            <h4 class="text-white mb-4">
+                <i class="fas fa-brain"></i> AI Engine
+            </h4>
+            
+            <!-- Navigation Links -->
+            <div class="mb-4">
+                <a href="/" class="btn btn-outline-light btn-sm w-100 mb-2">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="/candidate" class="btn btn-outline-light btn-sm w-100">
+                    <i class="fas fa-user-graduate"></i> Candidate Portal
+                </a>
+            </div>
+            
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#dashboard" onclick="showSection('dashboard')">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#candidates" onclick="showSection('candidates')">
+                        <i class="fas fa-users"></i> Candidates
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#internships" onclick="showSection('internships')">
+                        <i class="fas fa-briefcase"></i> Internships
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#analytics" onclick="showSection('analytics')">
+                        <i class="fas fa-chart-bar"></i> Analytics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#settings" onclick="showSection('settings')">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navigation Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded shadow-sm">
+            <div>
+                <h4 class="mb-0 text-primary">
+                    <i class="fas fa-cog"></i> Admin Dashboard
+                </h4>
+            </div>
+            <div>
+                <a href="/" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="/candidate" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-user-graduate"></i> Candidate Portal
+                </a>
+            </div>
+        </div>
+        
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="content-section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-candidates">0</div>
+                        <div class="text-muted">Total Candidates</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-internships">0</div>
+                        <div class="text-muted">Available Internships</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="avg-match-score">0%</div>
+                        <div class="text-muted">Avg Match Score</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-number" id="diversity-rate">0%</div>
+                        <div class="text-muted">Diversity Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-chart-pie"></i> Sector Distribution</h5>
+                        <canvas id="sectorChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-chart-line"></i> Match Score Trends</h5>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="dashboard-card">
+                <h5><i class="fas fa-clock"></i> Recent Activity</h5>
+                <div id="recent-activity">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Candidates Section -->
+        <div id="candidates-section" class="content-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users"></i> Candidate Management</h2>
+                <button class="btn btn-success" onclick="showAddCandidateModal()">
+                    <i class="fas fa-plus"></i> Add Candidate
+                </button>
+            </div>
+
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Education</th>
+                                <th>Location</th>
+                                <th>Skills</th>
+                                <th>Diversity</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="candidates-table">
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading candidates...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Internships Section -->
+        <div id="internships-section" class="content-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-briefcase"></i> Internship Management</h2>
+                <button class="btn btn-success" onclick="showAddInternshipModal()">
+                    <i class="fas fa-plus"></i> Add Internship
+                </button>
+            </div>
+
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Company</th>
+                                <th>Sector</th>
+                                <th>Location</th>
+                                <th>Capacity</th>
+                                <th>Stipend</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="internships-table">
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading internships...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics-section" class="content-section" style="display: none;">
+            <h2><i class="fas fa-chart-bar"></i> Analytics & Reports</h2>
+            
+            <div class="row">
+                <div class="col-md-8 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-chart-area"></i> Matching Performance</h5>
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-map-marker-alt"></i> Location Distribution</h5>
+                        <canvas id="locationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-graduation-cap"></i> Education Levels</h5>
+                        <canvas id="educationChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5><i class="fas fa-users"></i> Diversity Metrics</h5>
+                        <canvas id="diversityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings-section" class="content-section" style="display: none;">
+            <h2><i class="fas fa-cog"></i> System Settings</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h5><i class="fas fa-sliders-h"></i> Matching Weights</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Skills Weight</label>
+                            <input type="range" class="form-range" id="skills-weight" min="0" max="50" value="30">
+                            <div class="d-flex justify-content-between">
+                                <span>0%</span>
+                                <span id="skills-value">30%</span>
+                                <span>50%</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location Weight</label>
+                            <input type="range" class="form-range" id="location-weight" min="0" max="30" value="20">
+                            <div class="d-flex justify-content-between">
+                                <span>0%</span>
+                                <span id="location-value">20%</span>
+                                <span>30%</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Education Weight</label>
+                            <input type="range" class="form-range" id="education-weight" min="0" max="30" value="20">
+                            <div class="d-flex justify-content-between">
+                                <span>0%</span>
+                                <span id="education-value">20%</span>
+                                <span>30%</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="updateWeights()">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h5><i class="fas fa-language"></i> Language Settings</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Default Language</label>
+                            <select class="form-select" id="default-language">
+                                <option value="en">English</option>
+                                <option value="hi">हिन्दी</option>
+                                <option value="ta">தமிழ்</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Supported Languages</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="lang-en" checked>
+                                <label class="form-check-label" for="lang-en">English</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="lang-hi" checked>
+                                <label class="form-check-label" for="lang-hi">हिन्दी</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="lang-ta" checked>
+                                <label class="form-check-label" for="lang-ta">தமிழ்</label>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="updateLanguageSettings()">
+                            <i class="fas fa-save"></i> Save Language Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="addCandidateModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Candidate</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCandidateForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="candidate-name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Education Level</label>
+                                <select class="form-select" id="candidate-education" required>
+                                    <option value="">Select Education</option>
+                                    <option value="Diploma">Diploma</option>
+                                    <option value="Bachelor">Bachelor's Degree</option>
+                                    <option value="Master">Master's Degree</option>
+                                    <option value="PhD">PhD</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Skills (comma-separated)</label>
+                                <input type="text" class="form-control" id="candidate-skills" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location</label>
+                                <select class="form-select" id="candidate-location" required>
+                                    <option value="">Select Location</option>
+                                    <option value="Bangalore">Bangalore</option>
+                                    <option value="Mumbai">Mumbai</option>
+                                    <option value="Delhi">Delhi</option>
+                                    <option value="Chennai">Chennai</option>
+                                    <option value="Hyderabad">Hyderabad</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sector Interests</label>
+                                <input type="text" class="form-control" id="candidate-sectors" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Social Category</label>
+                                <select class="form-select" id="candidate-social">
+                                    <option value="">Select Category</option>
+                                    <option value="General">General</option>
+                                    <option value="SC">SC</option>
+                                    <option value="ST">ST</option>
+                                    <option value="OBC">OBC</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="candidate-rural-pref">
+                                    <label class="form-check-label">Prefers Rural</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="candidate-rural-from">
+                                    <label class="form-check-label">From Rural Area</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="candidate-first-gen">
+                                    <label class="form-check-label">First Generation</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addCandidate()">Add Candidate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let sectorChart, trendChart, performanceChart, locationChart, educationChart, diversityChart;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            initializeCharts();
+        });
+
+        // Navigation functions
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Remove active class from all nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName + '-section').style.display = 'block';
+            
+            // Add active class to clicked nav link
+            event.target.classList.add('active');
+            
+            // Load section-specific data
+            if (sectionName === 'candidates') {
+                loadCandidates();
+            } else if (sectionName === 'internships') {
+                loadInternships();
+            } else if (sectionName === 'analytics') {
+                loadAnalytics();
+            }
+        }
+
+        // Dashboard functions
+        async function loadDashboardData() {
+            try {
+                const [candidatesRes, internshipsRes] = await Promise.all([
+                    fetch('/api/candidates'),
+                    fetch('/api/internships')
+                ]);
+                
+                const candidates = await candidatesRes.json();
+                const internships = await internshipsRes.json();
+                
+                if (candidates.success && internships.success) {
+                    updateDashboardStats(candidates.candidates, internships.internships);
+                    updateRecentActivity(candidates.candidates);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        function updateDashboardStats(candidates, internships) {
+            document.getElementById('total-candidates').textContent = candidates.length;
+            document.getElementById('total-internships').textContent = internships.length;
+            
+            // Calculate average match score (simulated)
+            const avgScore = Math.floor(Math.random() * 20) + 75; // 75-95%
+            document.getElementById('avg-match-score').textContent = avgScore + '%';
+            
+            // Calculate diversity rate
+            const diversityCount = candidates.filter(c => 
+                c.from_rural_area || c.social_category !== 'General' || c.first_generation_graduate
+            ).length;
+            const diversityRate = candidates.length > 0 ? Math.round((diversityCount / candidates.length) * 100) : 0;
+            document.getElementById('diversity-rate').textContent = diversityRate + '%';
+        }
+
+        function updateRecentActivity(candidates) {
+            const activityContainer = document.getElementById('recent-activity');
+            const recentCandidates = candidates.slice(-5).reverse();
+            
+            activityContainer.innerHTML = recentCandidates.map(candidate => `
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <div>
+                        <strong>${candidate.name}</strong> registered
+                        <small class="text-muted">- ${candidate.education_level} in ${candidate.location}</small>
+                    </div>
+                    <span class="badge bg-primary">New</span>
+                </div>
+            `).join('');
+        }
+
+        // Chart initialization
+        function initializeCharts() {
+            // Sector Distribution Chart
+            const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+            sectorChart = new Chart(sectorCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Technology', 'Finance', 'Healthcare', 'Marketing'],
+                    datasets: [{
+                        data: [40, 25, 20, 15],
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Trend Chart
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Avg Match Score',
+                        data: [78, 82, 85, 88, 86, 89],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Candidate management
+        async function loadCandidates() {
+            try {
+                const response = await fetch('/api/candidates');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const tbody = document.getElementById('candidates-table');
+                    tbody.innerHTML = data.candidates.map(candidate => `
+                        <tr>
+                            <td>${candidate.id}</td>
+                            <td>${candidate.name}</td>
+                            <td><span class="badge bg-info">${candidate.education_level}</span></td>
+                            <td>${candidate.location}</td>
+                            <td>${candidate.skills.slice(0, 2).join(', ')}${candidate.skills.length > 2 ? '...' : ''}</td>
+                            <td>
+                                ${candidate.from_rural_area ? '<span class="badge bg-success">Rural</span>' : ''}
+                                ${candidate.social_category !== 'General' ? '<span class="badge bg-warning">' + candidate.social_category + '</span>' : ''}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewCandidate(${candidate.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editCandidate(${candidate.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteCandidate(${candidate.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading candidates:', error);
+            }
+        }
+
+        // Internship management
+        async function loadInternships() {
+            try {
+                const response = await fetch('/api/internships');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const tbody = document.getElementById('internships-table');
+                    tbody.innerHTML = data.internships.map(internship => `
+                        <tr>
+                            <td>${internship.id}</td>
+                            <td>${internship.title}</td>
+                            <td>${internship.company}</td>
+                            <td><span class="badge bg-primary">${internship.sector}</span></td>
+                            <td>${internship.location}</td>
+                            <td><span class="badge bg-info">${internship.capacity}</span></td>
+                            <td>₹${internship.stipend.toLocaleString()}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewInternship(${internship.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editInternship(${internship.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteInternship(${internship.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading internships:', error);
+            }
+        }
+
+        // Modal functions
+        function showAddCandidateModal() {
+            new bootstrap.Modal(document.getElementById('addCandidateModal')).show();
+        }
+
+        function showAddInternshipModal() {
+            // Implementation for internship modal
+            alert('Add Internship modal would open here');
+        }
+
+        // Utility functions
+        function refreshData() {
+            loadDashboardData();
+            if (document.getElementById('candidates-section').style.display !== 'none') {
+                loadCandidates();
+            }
+            if (document.getElementById('internships-section').style.display !== 'none') {
+                loadInternships();
+            }
+        }
+
+        // Placeholder functions for future implementation
+        function addCandidate() {
+            alert('Add candidate functionality would be implemented here');
+        }
+
+        function viewCandidate(id) {
+            alert(`View candidate ${id} details`);
+        }
+
+        function editCandidate(id) {
+            alert(`Edit candidate ${id}`);
+        }
+
+        function deleteCandidate(id) {
+            if (confirm('Are you sure you want to delete this candidate?')) {
+                alert(`Delete candidate ${id}`);
+            }
+        }
+
+        function viewInternship(id) {
+            alert(`View internship ${id} details`);
+        }
+
+        function editInternship(id) {
+            alert(`Edit internship ${id}`);
+        }
+
+        function deleteInternship(id) {
+            if (confirm('Are you sure you want to delete this internship?')) {
+                alert(`Delete internship ${id}`);
+            }
+        }
+
+        function loadAnalytics() {
+            // Load analytics charts
+            alert('Analytics charts would be loaded here');
+        }
+
+        function updateWeights() {
+            alert('Matching weights would be updated here');
+        }
+
+        function updateLanguageSettings() {
+            alert('Language settings would be updated here');
+        }
+    </script>
+</body>
+</html>
+```
+
+this is GUI_DOCUMENTATION.md 
+```
+# 🎨 Enhanced GUI System - Complete Documentation
+
+## ✅ **COMPREHENSIVE GUI DELIVERED**
+
+Your AI Smart Allocation Engine now includes a **complete, professional GUI system** with multiple interfaces for different user types.
+
+---
+
+## 🌐 **GUI Architecture Overview**
+
+### **Multi-Interface System**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    LANDING PAGE (/)                          │
+│  ┌─────────────────┐  ┌─────────────────┐                  │
+│  │   Candidate      │  │   Admin         │                  │
+│  │   Interface      │  │   Dashboard     │                  │
+│  │   (/candidate)   │  │   (/admin)     │                  │
+│  └─────────────────┘  └─────────────────┘                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🏠 **1. Landing Page (`/`)**
+
+### **Features:**
+- **Hero Section** with gradient background and glassmorphism effect
+- **Navigation Buttons** to access both interfaces
+- **Feature Showcase** highlighting key capabilities
+- **Statistics Display** showing system metrics
+- **Professional Footer** with branding
+
+### **Design Elements:**
+- **Modern Glassmorphism** design with backdrop blur
+- **Responsive Layout** that works on all devices
+- **Gradient Backgrounds** with professional color scheme
+- **Smooth Animations** and hover effects
+- **Font Awesome Icons** for visual appeal
+
+### **Access Points:**
+- **"Find My Internship"** → `/candidate` (User Interface)
+- **"Admin Dashboard"** → `/admin` (Administrator Interface)
+
+---
+
+## 👤 **2. Candidate Interface (`/candidate`)**
+
+### **Enhanced Features:**
+- **Modern Form Design** with Bootstrap 5 styling
+- **Real-time Validation** and user feedback
+- **Visual Recommendation Cards** with match scores
+- **Progress Indicators** during AI processing
+- **Mobile-Responsive** design for all devices
+- **Navigation Links** to other interfaces
+
+### **User Experience:**
+- **Intuitive Form Layout** with clear labels
+- **Visual Feedback** for form validation
+- **Loading Animations** during AI processing
+- **Detailed Match Explanations** with scoring breakdown
+- **Professional Card Design** for recommendations
+
+### **Visual Elements:**
+- **Match Score Badges** with color coding
+- **Skill Tags** for easy skill identification
+- **Location Icons** and visual indicators
+- **Diversity Badges** for inclusive opportunities
+- **Action Buttons** for applying to internships
+
+---
+
+## ⚙️ **3. Admin Dashboard (`/admin`)**
+
+### **Comprehensive Management System:**
+
+#### **📊 Dashboard Overview**
+- **Real-time Statistics** cards with key metrics
+- **Interactive Charts** using Chart.js
+- **Recent Activity** feed
+- **System Performance** indicators
+
+#### **👥 Candidate Management**
+- **Data Table** with all registered candidates
+- **Search and Filter** capabilities
+- **Add/Edit/Delete** candidate functionality
+- **Diversity Metrics** display
+- **Bulk Operations** support
+
+#### **💼 Internship Management**
+- **Complete Internship Database** view
+- **Add New Internships** with full details
+- **Edit Existing** internship information
+- **Capacity Management** and tracking
+- **Sector Distribution** analysis
+
+#### **📈 Analytics & Reports**
+- **Sector Distribution** pie charts
+- **Location Analysis** geographic charts
+- **Education Level** distribution
+- **Diversity Metrics** visualization
+- **Performance Trends** over time
+
+#### **⚙️ System Settings**
+- **Matching Algorithm Weights** adjustment
+- **Language Settings** configuration
+- **System Preferences** management
+- **Export/Import** functionality
+
+### **Advanced Features:**
+- **Sidebar Navigation** with active states
+- **Responsive Design** for mobile/tablet
+- **Real-time Data Updates** via API
+- **Interactive Charts** with hover effects
+- **Modal Dialogs** for data entry
+- **Toast Notifications** for user feedback
+
+---
+
+## 🎨 **Design System**
+
+### **Color Palette:**
+```css
+--primary-color: #2563eb    /* Blue */
+--secondary-color: #1e40af  /* Dark Blue */
+--success-color: #10b981   /* Green */
+--warning-color: #f59e0b   /* Orange */
+--danger-color: #ef4444    /* Red */
+--light-bg: #f8fafc        /* Light Gray */
+```
+
+### **Typography:**
+- **Font Family:** 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif
+- **Font Weights:** 400 (normal), 600 (semi-bold), 700 (bold)
+- **Responsive Sizing:** Scales appropriately across devices
+
+### **Components:**
+- **Cards:** Rounded corners (15px), subtle shadows
+- **Buttons:** Gradient backgrounds, hover animations
+- **Forms:** Clean inputs with focus states
+- **Tables:** Hover effects, responsive design
+- **Charts:** Interactive with tooltips
+
+---
+
+## 📱 **Responsive Design**
+
+### **Breakpoints:**
+- **Desktop:** 1200px+ (Full sidebar, multi-column layout)
+- **Tablet:** 768px-1199px (Collapsible sidebar, adjusted columns)
+- **Mobile:** <768px (Stacked layout, mobile-optimized navigation)
+
+### **Mobile Features:**
+- **Touch-friendly** buttons and inputs
+- **Swipe gestures** for navigation
+- **Optimized forms** for mobile keyboards
+- **Responsive charts** that scale properly
+- **Mobile-first** design approach
+
+---
+
+## 🔧 **Technical Implementation**
+
+### **Frontend Technologies:**
+- **HTML5** with semantic markup
+- **CSS3** with custom properties and animations
+- **Bootstrap 5** for responsive framework
+- **Font Awesome 6** for icons
+- **Chart.js** for data visualization
+- **Vanilla JavaScript** for interactivity
+
+### **Backend Integration:**
+- **RESTful API** endpoints for data
+- **Real-time Updates** via AJAX
+- **Error Handling** with user feedback
+- **Data Validation** on both client and server
+- **Session Management** for user state
+
+### **API Endpoints:**
+```
+GET  /                    → Landing page
+GET  /candidate          → Candidate interface
+GET  /admin              → Admin dashboard
+POST /api/recommendations → Get AI recommendations
+GET  /api/candidates      → List all candidates
+POST /api/candidates      → Add new candidate
+GET  /api/internships     → List all internships
+GET  /api/analytics       → Get analytics data
+GET  /api/languages       → Get supported languages
+```
+
+---
+
+## 🚀 **How to Access the Enhanced GUI**
+
+### **1. Start the Application**
+```bash
+python app.py
+```
+
+### **2. Access Different Interfaces**
+
+#### **Landing Page:**
+- **URL:** `http://localhost:5000`
+- **Purpose:** Main entry point with navigation options
+
+#### **Candidate Interface:**
+- **URL:** `http://localhost:5000/candidate`
+- **Purpose:** For students to find internships
+- **Features:** Form submission, AI recommendations, visual cards
+
+#### **Admin Dashboard:**
+- **URL:** `http://localhost:5000/admin`
+- **Purpose:** For administrators to manage the system
+- **Features:** Analytics, candidate management, internship management
+
+---
+
+## 📊 **GUI Features Summary**
+
+### **✅ User Interface (Candidate)**
+- ✅ Modern, responsive form design
+- ✅ Real-time AI recommendations
+- ✅ Visual match score cards
+- ✅ Mobile-optimized experience
+- ✅ Clear navigation and feedback
+
+### **✅ Admin Dashboard**
+- ✅ Comprehensive data management
+- ✅ Interactive analytics charts
+- ✅ Real-time statistics
+- ✅ Candidate and internship CRUD operations
+- ✅ System settings configuration
+
+### **✅ Landing Page**
+- ✅ Professional presentation
+- ✅ Feature showcase
+- ✅ Clear navigation paths
+- ✅ Branding and information
+
+### **✅ Technical Features**
+- ✅ Responsive design for all devices
+- ✅ Modern CSS with animations
+- ✅ Interactive JavaScript components
+- ✅ Chart.js data visualizations
+- ✅ Bootstrap 5 framework
+- ✅ Font Awesome icons
+
+---
+
+## 🎯 **GUI Benefits**
+
+### **For Candidates:**
+- **Intuitive Experience:** Easy-to-use interface for finding internships
+- **Visual Feedback:** Clear match scores and explanations
+- **Mobile Access:** Use on any device, anywhere
+- **Professional Design:** Builds trust and confidence
+
+### **For Administrators:**
+- **Complete Control:** Manage all aspects of the system
+- **Data Insights:** Visual analytics and reporting
+- **Efficient Management:** Streamlined candidate and internship management
+- **System Monitoring:** Real-time performance metrics
+
+### **For the Organization:**
+- **Professional Image:** Modern, polished interface
+- **Scalable Design:** Ready for growth and expansion
+- **User Adoption:** Intuitive design encourages usage
+- **Data-Driven Decisions:** Analytics support informed choices
+
+---
+
+## 🏆 **GUI Achievement Summary**
+
+**Your AI Smart Allocation Engine now includes:**
+
+✅ **Complete Multi-Interface System**  
+✅ **Professional Landing Page**  
+✅ **Enhanced Candidate Interface**  
+✅ **Comprehensive Admin Dashboard**  
+✅ **Responsive Design for All Devices**  
+✅ **Interactive Data Visualizations**  
+✅ **Modern UI/UX Design**  
+✅ **Real-time Analytics**  
+✅ **Mobile-Optimized Experience**  
+✅ **Professional Branding**  
+
+**The GUI system is production-ready and provides an excellent user experience for both candidates and administrators!**
+
+---
+
+**🌐 Access your enhanced GUI at: `http://localhost:5000`**
+```
+
+this is PROJECT_SUMMARY.md
+```
+# 🎯 AI Smart Allocation Engine - Project Summary
+
+## ✅ Project Completion Status: 100%
+
+**Problem Statement**: AI-Based Smart Allocation Engine for PM Internship Scheme  
+**Organization**: Ministry of Corporate Affairs  
+**Category**: Software  
+**Hackathon**: Smart India Hackathon 2024
+
+---
+
+## 🚀 **WORKING PROTOTYPE DELIVERED**
+
+### ✅ **All Expected Solution Requirements Met**
+
+1. **✅ Captures basic candidate inputs** (education, skills, sector interests, location)
+2. **✅ Uses AI/ML model** to suggest 3-5 top internships  
+3. **✅ Simple, intuitive UI** with minimal text and visual cues
+4. **✅ Mobile device accessible** and responsive design
+5. **✅ Regional language support** framework implemented
+6. **✅ Clear, user-friendly output** format (cards and lists)
+
+---
+
+## 🏗️ **Technical Implementation**
+
+### **Core Components Built**
+
+1. **`smart_allocation_engine.py`** - AI/ML matching algorithm
+2. **`app.py`** - Flask web application with REST API
+3. **`templates/index.html`** - Modern, mobile-responsive UI
+4. **`language_support.py`** - Regional language support (English, Hindi, Tamil)
+5. **`demo.py`** - Comprehensive testing and demonstration
+6. **`start.py`** - Quick start script for easy deployment
+
+### **AI Algorithm Features**
+
+- **Multi-factor Scoring**: Skills (30%), Location (20%), Education (20%), Sector (15%), Diversity (15%)
+- **Affirmative Action Support**: Rural area, social category, first-generation graduate considerations
+- **Intelligent Matching**: Rule-based + ML-light approach for accurate recommendations
+- **Real-time Processing**: Instant recommendations with detailed explanations
+
+### **User Experience Features**
+
+- **Mobile-First Design**: Responsive across all devices
+- **Visual Cards**: Clean, modern internship recommendation cards
+- **Progress Indicators**: Loading states and visual feedback
+- **Accessibility**: Designed for users across technical backgrounds
+- **Multi-language**: Ready for Hindi, Tamil, and English
+
+---
+
+## 📊 **Demo Results**
+
+### **Test Cases Executed Successfully**
+
+1. **Priya Sharma** (Tech-focused): 89.5% match with Software Development Intern
+2. **Raj Kumar** (Data Science + Rural): 89.5% match with Data Science Intern  
+3. **Sunita Devi** (Marketing + Diversity): 85.0% match with Marketing Intern
+
+### **System Performance**
+- ✅ **5 Internship Opportunities** loaded
+- ✅ **3 Test Candidates** processed
+- ✅ **API Endpoints** functional
+- ✅ **Diversity Scoring** working (80% bonus for rural candidates)
+- ✅ **Skill Matching** accurate (50-100% based on relevance)
+
+---
+
+## 🌐 **How to Run the Prototype**
+
+### **Quick Start**
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run demo
+python demo.py
+
+# Start web application
+python app.py
+# Visit: http://localhost:5000
+```
+
+### **Alternative Start**
+```bash
+# Use the quick start script
+python start.py
+```
+
+---
+
+## 🎯 **Key Achievements**
+
+### **Problem Statement Requirements**
+- ✅ **Smart Automation**: AI-powered matching system
+- ✅ **Candidate Input Capture**: Comprehensive form with all required fields
+- ✅ **ML-based Recommendations**: Intelligent scoring and ranking
+- ✅ **Mobile Accessibility**: Responsive design for all devices
+- ✅ **Regional Language Support**: Framework for Hindi, Tamil, English
+- ✅ **User-friendly Output**: Visual cards with clear explanations
+
+### **Technical Excellence**
+- ✅ **Scalable Architecture**: Modular design for easy expansion
+- ✅ **RESTful API**: Clean endpoints for integration
+- ✅ **Data Persistence**: Candidate and internship management
+- ✅ **Error Handling**: Robust error management and validation
+- ✅ **Documentation**: Comprehensive README and code comments
+
+### **Innovation Features**
+- ✅ **Affirmative Action Integration**: Rural, social category, first-generation support
+- ✅ **Multi-factor Scoring**: Balanced consideration of all matching criteria
+- ✅ **Real-time Processing**: Instant recommendations with explanations
+- ✅ **Visual Feedback**: Match scores, reasons, and progress indicators
+
+---
+
+## 🔮 **Ready for Production**
+
+### **Deployment Ready**
+- ✅ **Dependencies**: All required packages specified
+- ✅ **Configuration**: Environment-ready setup
+- ✅ **Testing**: Comprehensive test cases and validation
+- ✅ **Documentation**: Complete user and developer guides
+
+### **Scalability Prepared**
+- ✅ **Database Integration**: Ready for PostgreSQL/MongoDB
+- ✅ **Cloud Deployment**: Compatible with AWS/Azure/GCP
+- ✅ **Microservices**: Modular architecture for scaling
+- ✅ **API Integration**: RESTful endpoints for external systems
+
+---
+
+## 🏆 **Project Impact**
+
+### **For Candidates**
+- **Personalized Matching**: AI finds the best internship fits
+- **Diversity Support**: Affirmative action considerations
+- **Mobile Access**: Use on any device, anywhere
+- **Clear Guidance**: Detailed explanations for each recommendation
+
+### **For Administrators**
+- **Automated Processing**: Reduces manual matching effort
+- **Data Insights**: Comprehensive candidate and internship analytics
+- **Scalable System**: Handles large volumes efficiently
+- **Integration Ready**: API endpoints for external systems
+
+### **For Society**
+- **Equal Opportunity**: Supports diversity and inclusion
+- **Rural Development**: Special consideration for rural candidates
+- **Skill Development**: Matches candidates with relevant opportunities
+- **Digital India**: Modern, accessible technology solution
+
+---
+
+## 🎉 **Conclusion**
+
+**The AI Smart Allocation Engine is a complete, working prototype that fully addresses the problem statement requirements. The system successfully demonstrates:**
+
+- ✅ **Functional AI/ML matching** with accurate recommendations
+- ✅ **Modern, mobile-responsive UI** with excellent user experience  
+- ✅ **Comprehensive candidate input capture** with all required fields
+- ✅ **Regional language support** framework for broader accessibility
+- ✅ **Affirmative action integration** supporting diversity and inclusion
+- ✅ **Production-ready architecture** with scalable design
+
+**The prototype is ready for demonstration, testing, and potential deployment in the PM Internship Scheme.**
+
+---
+
+**Built with ❤️ for Smart India Hackathon 2024**  
+**Ministry of Corporate Affairs - AI-Based Smart Allocation Engine**
+```
+
+this is README.md
+```
+# AI Smart Allocation Engine for PM Internship Scheme
+
+A comprehensive AI-powered system that intelligently matches candidates with internship opportunities based on skills, qualifications, location preferences, and sector interests, while incorporating affirmative action considerations.
+
+## 🎯 Problem Statement
+
+The system addresses the need for an automated, intelligent platform that can:
+- Match candidates with suitable internship opportunities
+- Consider skills, qualifications, and location preferences
+- Account for affirmative action and diversity requirements
+- Support rural/aspirational district representation
+- Optimize internship capacity allocation
+
+## ✨ Features
+
+### Core Functionality
+- **AI-Powered Matching**: Uses ML algorithms to score and rank internship matches
+- **Multi-Factor Scoring**: Considers skills, location, education, sector interests, and diversity
+- **Affirmative Action Support**: Includes rural area, social category, and first-generation graduate considerations
+- **Real-time Recommendations**: Provides instant, personalized internship suggestions
+
+### User Experience
+- **Mobile-Responsive Design**: Optimized for mobile devices and tablets
+- **Intuitive UI**: Clean, modern interface with visual cards and minimal text
+- **Visual Feedback**: Clear match scores, reasons, and progress indicators
+- **Accessibility**: Designed for users across different technical backgrounds
+
+### Technical Features
+- **RESTful API**: Clean API endpoints for integration
+- **Scalable Architecture**: Modular design for easy expansion
+- **Data Persistence**: Candidate and internship data management
+- **Extensible Framework**: Ready for regional language support
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.8 or higher
+- pip (Python package installer)
+
+### Installation
+
+1. **Clone or download the project**
+   ```bash
+   # If you have git
+   git clone <repository-url>
+   cd sih-project
+   
+   # Or simply download and extract the files
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run the demo**
+   ```bash
+   python demo.py
+   ```
+
+4. **Start the web application**
+   ```bash
+   python app.py
+   ```
+
+5. **Access the application**
+   - Open your browser
+   - Navigate to `http://localhost:5000`
+   - Start exploring internship matches!
+
+## 📱 Usage Guide
+
+### For Candidates
+
+1. **Fill out the form** with your information:
+   - Personal details (name, education level)
+   - Skills (comma-separated list)
+   - Location preferences
+   - Sector interests
+   - Background information for diversity considerations
+
+2. **Submit the form** to get AI-powered recommendations
+
+3. **Review matches** with detailed scoring and explanations
+
+4. **Apply to internships** that interest you
+
+### For Administrators
+
+- **API Endpoints**:
+  - `GET /api/internships` - View all available internships
+  - `GET /api/candidates` - View registered candidates
+  - `POST /api/recommendations` - Get recommendations for a candidate
+
+## 🧠 AI Algorithm Details
+
+### Matching Algorithm
+
+The system uses a weighted scoring approach with the following components:
+
+1. **Skill Matching (30% weight)**
+   - Compares candidate skills with internship requirements
+   - Uses fuzzy matching for skill variations
+   - Considers skill relevance and depth
+
+2. **Location Preference (20% weight)**
+   - Exact location matches get highest score
+   - Rural-friendly internships get bonus for rural candidates
+   - Regional proximity considerations
+
+3. **Education Level (20% weight)**
+   - Exact education level matches preferred
+   - Higher education candidates can apply to lower-level positions
+   - Structured education hierarchy
+
+4. **Sector Interest (15% weight)**
+   - Matches candidate interests with internship sectors
+   - Multiple interest support
+   - Cross-sector compatibility
+
+5. **Diversity & Affirmative Action (15% weight)**
+   - Rural area origin bonus
+   - Social category considerations (SC/ST/OBC)
+   - First-generation graduate support
+   - Diversity-focused internship preferences
+
+### Scoring Formula
+```
+Overall Score = (Skill × 0.3) + (Location × 0.2) + (Education × 0.2) + (Sector × 0.15) + (Diversity × 0.15)
+```
+
+## 🏗️ Architecture
+
+### Backend Components
+
+- **`smart_allocation_engine.py`**: Core AI engine with matching algorithms
+- **`app.py`**: Flask web application with API endpoints
+- **`demo.py`**: Demonstration script with test cases
+
+### Frontend Components
+
+- **`templates/index.html`**: Main user interface
+- **Bootstrap 5**: Responsive CSS framework
+- **Font Awesome**: Icons and visual elements
+- **Custom CSS**: Modern styling and animations
+
+### Data Models
+
+#### Candidate Model
+```python
+{
+    'name': str,
+    'education_level': str,  # Diploma, Bachelor, Master, PhD
+    'skills': List[str],
+    'location': str,
+    'sector_interests': List[str],
+    'prefers_rural': bool,
+    'from_rural_area': bool,
+    'social_category': str,  # General, SC, ST, OBC
+    'first_generation_graduate': bool
+}
+```
+
+#### Internship Model
+```python
+{
+    'id': int,
+    'title': str,
+    'company': str,
+    'sector': str,
+    'location': str,
+    'skills_required': List[str],
+    'education_level': str,
+    'capacity': int,
+    'duration_months': int,
+    'stipend': int,
+    'rural_friendly': bool,
+    'diversity_focused': bool
+}
+```
+
+## 🔧 API Documentation
+
+### Endpoints
+
+#### `POST /api/recommendations`
+Get internship recommendations for a candidate.
+
+**Request Body:**
+```json
+{
+    "name": "John Doe",
+    "education_level": "Bachelor",
+    "skills": ["Python", "JavaScript"],
+    "location": "Bangalore",
+    "sector_interests": ["Technology"],
+    "social_category": "General",
+    "prefers_rural": false,
+    "from_rural_area": false,
+    "first_generation_graduate": false
+}
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "candidate_id": 1,
+    "recommendations": [
+        {
+            "internship": { /* internship object */ },
+            "scores": {
+                "overall": 0.85,
+                "skill_match": 0.75,
+                "location_match": 1.0,
+                "education_match": 1.0,
+                "sector_match": 1.0,
+                "diversity_bonus": 0.0
+            },
+            "match_reasons": ["Strong skill alignment", "Perfect location match"]
+        }
+    ]
+}
+```
+
+#### `GET /api/internships`
+Get all available internships.
+
+#### `GET /api/candidates`
+Get all registered candidates.
+
+## 🌐 Regional Language Support
+
+The system is designed with internationalization in mind:
+
+- **Language Framework**: Ready for i18n implementation
+- **Unicode Support**: Full UTF-8 character support
+- **Localization Ready**: Structured for easy translation
+- **Cultural Considerations**: Respects regional preferences
+
+### Adding New Languages
+
+1. Create language files in `translations/` directory
+2. Update the frontend to use translation keys
+3. Modify the backend to serve localized content
+
+## 📊 Sample Data
+
+The system includes comprehensive sample data:
+
+- **5 Internship Opportunities** across different sectors
+- **3 Test Candidates** with diverse backgrounds
+- **Multiple Skill Sets** covering technology, marketing, finance, and healthcare
+- **Geographic Diversity** across major Indian cities
+- **Diversity Considerations** including rural and social category representation
+
+## 🧪 Testing
+
+### Running Tests
+
+```bash
+# Run the demo script
+python demo.py
+
+# Test specific components
+python -c "from smart_allocation_engine import SmartAllocationEngine; engine = SmartAllocationEngine(); print('✅ Engine loaded successfully')"
+```
+
+### Test Cases
+
+The demo includes three comprehensive test cases:
+
+1. **Tech-focused candidate** (Priya Sharma)
+2. **Data science candidate with rural background** (Raj Kumar)
+3. **Marketing candidate with diversity considerations** (Sunita Devi)
+
+## 🚀 Deployment
+
+### Local Development
+```bash
+python app.py
+```
+
+### Production Deployment
+```bash
+# Using Gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 app:app
+
+# Using Docker (if Dockerfile is created)
+docker build -t internship-engine .
+docker run -p 5000:5000 internship-engine
+```
+
+## 🔮 Future Enhancements
+
+### Planned Features
+- **Machine Learning Integration**: Advanced ML models for better matching
+- **Real-time Chat**: Candidate-employer communication
+- **Analytics Dashboard**: Admin insights and reporting
+- **Mobile App**: Native mobile application
+- **Blockchain Integration**: Secure credential verification
+- **Video Interviews**: Integrated interview scheduling
+
+### Scalability Considerations
+- **Database Integration**: PostgreSQL/MongoDB for production
+- **Caching Layer**: Redis for performance optimization
+- **Load Balancing**: Multiple server instances
+- **Microservices**: Service-oriented architecture
+- **Cloud Deployment**: AWS/Azure/GCP integration
+
+## 🤝 Contributing
+
+### Development Setup
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
+
+### Code Standards
+- Follow PEP 8 for Python code
+- Use meaningful variable names
+- Add docstrings to functions
+- Include type hints where appropriate
+
+## 📄 License
+
+This project is developed for the Smart India Hackathon 2024 under the Ministry of Corporate Affairs.
+
+## 👥 Team
+
+- **AI Developer**: [Your Name]
+- **Problem Statement**: AI-Based Smart Allocation Engine for PM Internship Scheme
+- **Organization**: Ministry of Corporate Affairs
+
+## 📞 Support
+
+For questions, issues, or contributions:
+- Create an issue in the repository
+- Contact the development team
+- Check the documentation for common solutions
+
+---
+
+**Built with ❤️ for Smart India Hackathon 2024**
+
+```
+
+Thanks for sharing the full codebase. I read everything end-to-end and mapped out how it currently works, what’s solid, and what we need to do to make it production-ready. Below is a detailed, no-holds-barred report you can use as a blueprint.
+
+Overview
+- You have a working Flask app with:
+  - Landing page, Candidate UI, and Admin Dashboard (templates provided).
+  - Two “engines”:
+    - smart_allocation_engine.py: rule-based, in-memory sample data (used by app.py).
+    - self_test.py: TF-IDF skill matching + CSV ingestion (used by dummy_app.py).
+  - A language_support.py module with translations and helpers.
+  - A demo script and a start script.
+- The candidate flow is functional: post a form -> get recommendations -> display cards.
+- The Admin UI is visually complete but many actions are placeholders (no real APIs for CRUD/settings).
+- Documentation is extensive and polished, but a few claims are ahead of the implementation (e.g., analytics, weights, i18n usage).
+
+What’s Good (Foundation)
+- Clear separation of concerns: engine vs app vs templates.
+- Clean UI with Bootstrap 5, modern components, good UX flows (loading states, cards, tags).
+- Matching algorithm considers multiple dimensions (skills, location, education, sector, diversity).
+- Language support scaffolding is in place; translations for labels exist in 3 languages.
+- The API surface is reasonable: recommendations, candidates, internships, analytics, languages.
+- Demo and start scripts exist for quick testing.
+
+Key Gaps and Issues (Concrete)
+1) Dual Engine implementations diverge
+- app.py uses smart_allocation_engine (rule-based, sample data).
+- dummy_app.py uses self_test (TF-IDF + CSV).
+- Different behaviors and schemas (email dedupe exists only in self_test).
+- Action: unify to ONE engine with CSV ingestion + TF-IDF + robust fallbacks, and add a feature flag for “sample mode”.
+
+2) CSV loader bug and portability
+- self_test.load_internship_data_from_csv(filepath) ignores the filepath argument and hardcodes D:\sih\internships_dummy_dataset.csv. This breaks portability and deployment.
+- Action: honor the passed filepath and switch to relative paths or env-config.
+
+3) TF-IDF index mismatch
+- calculate_skill_match_score uses internship['id'] - 1 to index into skill_matrix. If IDs aren’t contiguous starting at 1, this will be wrong.
+- Action: maintain an index map between internship list index and TF-IDF matrix row.
+
+4) Admin dashboard JavaScript bug
+- showSection uses event.target but event isn’t passed; this will throw ReferenceError in modern browsers.
+- Action: pass the element (this) or the event.
+
+5) UI security: innerHTML injection
+- index.html builds cards with innerHTML using data from server. If internship fields are untrusted, XSS is possible.
+- Action: sanitize or use textContent for dynamic text; only build HTML for controlled markup.
+
+6) Start script opens wrong URL
+- start.py opens http://localhost:8888 but runs Flask on port 5000.
+- Action: open the correct port (5000) or make it configurable.
+
+7) CORS wide open, admin exposed
+- CORS(app) without restrictions; Admin dashboard at /admin has no auth.
+- Action: restrict CORS, add authentication/authorization for admin routes, hide admin in production or require login.
+
+8) No persistence for production
+- app.py stores everything in memory; dummy_app.py has limited candidate persistence helpers but not used; no DB integration.
+- Action: integrate a database (start with SQLite/PostgreSQL via SQLAlchemy), implement CRUD endpoints, and move away from in-memory lists.
+
+9) Analytics not wired to real data
+- /api/analytics exists, but Admin charts use static data and alerts (“would be loaded here”).
+- Action: fetch /api/analytics in Admin and render real charts; compute avg match score from real sessions/matches.
+
+10) Language support not integrated in UI
+- language_support has translations but templates use hardcoded English strings.
+- Action: either server-side i18n with Jinja or client-side fetch of /api/translations/<lang> and DOM text replacement; add language selector.
+
+11) Input validation and error handling
+- Validation is minimal; no schema validation; mixed handling of skills (string vs list) across endpoints; error responses return str(e) as JSON and HTTP 500.
+- Action: use Pydantic or Marshmallow for request schema validation; return consistent error codes/messages; don’t leak internals.
+
+12) Weights/settings not persisted or applied
+- Admin has sliders for weights, but there’s no backend to save/apply them. Engine uses hardcoded weights.
+- Action: implement /api/settings (GET/PUT), persist to DB or config file, apply dynamically in the engine.
+
+13) Inconsistent candidate schema across endpoints
+- dummy_app requires email in POST /api/candidates and dedupes on email; app.py’s POST /api/candidates does not. The candidate form (index.html) has no email field.
+- Action: define a single canonical candidate model; add email to candidate UI (if dedupe is desired) or generate stable IDs; unify the POST logic.
+
+14) Observability, logging, and testing missing
+- No structured logging, no error logs, no tests (unit/integration), no metrics.
+- Action: introduce logging (structlog/loguru), request logging, add pytest suite, and metrics endpoints.
+
+15) Directory naming: templates vs template
+- Flask uses templates/ by convention. Your message shows /template/*.html. If your directory is actually “template”, Flask will fail to find templates.
+- Action: ensure folder name is templates/ and that render_template resolves correctly.
+
+Code Review (by file)
+- app.py
+  - Uses SmartAllocationEngine with sample data; good for demo but not for production.
+  - /api/recommendations both returns recommendations and adds candidate; this can cause duplicates on repeated calls.
+  - /api/candidates POST duplicates logic in /api/recommendations. Suggest refactor: separate “create candidate” from “get recommendations”.
+  - Analytics calcs are fine for MVP but should be derived from DB.
+  - No authentication for admin endpoints; no rate-limiting; CORS unrestricted.
+
+- dummy_app.py
+  - Uses self_test engine and attempts CSV path. Good variation, but the module coupling is fragile (absolute path).
+  - POST /api/candidates requires email and dedupes: good pattern. Consider making email optional with fallback dedupe rules.
+  - Mirror endpoints consistent with app.py but semantics differ (inconsistency risk).
+
+- smart_allocation_engine.py
+  - Clean, deterministic scoring.
+  - Has StandardScaler import but unused; remove dead code or integrate if needed.
+  - Good for sample mode but limited skill matching (exact overlap). No fuzzy/semantic matching.
+
+- self_test.py
+  - TF-IDF-based skill similarity is a solid step up.
+  - Critical issues: filepath ignored; TF-IDF index assumption; sets returned in JSON handled via make_json_serializable (good).
+  - Diversity/location/education logic is consistent with other engine.
+  - Persistence helpers exist (save/load candidates) but unused.
+
+- language_support.py
+  - Translations and helpers are good; integrate into templates/JS.
+  - format_currency/duration are consistent but not used by the UI.
+  - Translate functions assume specific values; ensure consistent mapping.
+
+- start.py
+  - Dependency check is nice, but open browser to wrong port.
+  - Consider using app factory and environment configs; gunicorn in prod.
+
+- templates/index.html
+  - Strong UX and clean code. Fetches /api/recommendations and renders cards nicely.
+  - Potential XSS injection via innerHTML.
+  - Not using language support; text strings hardcoded.
+  - No email field; consider adding if you want dedupe.
+
+- templates/admin_dashboard.html
+  - Great layout and structure. Real admin features are mostly stubbed (placeholders).
+  - JS bug with event.target; fix required.
+  - Charts use static data; integrate with /api/analytics.
+  - No modal for internships; add real form; connect to backend.
+  - No delete/edit API endpoints exist in backend.
+
+- templates/landing.html
+  - Looks professional and polished. Good navigational hub.
+
+- docs (README.md, PROJECT_SUMMARY.md, GUI_DOCUMENTATION.md)
+  - Very comprehensive. Some claims (weights adjustment, real-time analytics) are ahead of current implementation and should be updated once implemented.
+
+Security and Privacy Checklist (gaps)
+- No authentication/authorization for admin.
+- CORS wide open.
+- Potential XSS in UI (innerHTML from server data).
+- No rate limiting or request size limiting.
+- PII handling: add privacy notice/consent if collecting email/phone; avoid logging PII.
+- No HTTPS guidance; if deployed, enforce TLS.
+- No CSRF needed for JSON APIs from same-origin, but if you allow browser-based admin from other origins, re-check.
+
+Production Hardening Plan (Prioritized)
+Phase 0 — Critical fixes (today)
+- Fix CSV loader to use passed path:
+  - self_test.load_internship_data_from_csv(filepath): read from filepath argument; remove hardcoded path.
+- Fix TF-IDF index mapping:
+  - Maintain a list index for each internship; use the list index to pick the corresponding TF-IDF row.
+- Fix Admin JS event bug:
+  - Pass this or event to showSection; avoid using undefined event.
+- Fix start.py URL:
+  - Open http://localhost:5000 or read port from env.
+- Sanitize dynamic HTML:
+  - In index.html, when injecting server data, ensure text fields are escaped or use textContent.
+
+Phase 1 — Unify engine and configuration (this week)
+- Single engine class:
+  - Merge the stronger pieces of self_test.py into SmartAllocationEngine or rename to SmartAllocationEngineV2.
+  - Support both sample data mode and CSV mode through configuration.
+- Configuration management:
+  - Use a config.py + .env (python-dotenv already included).
+  - ENV vars: ENGINE_MODE (sample|csv), CSV_PATH, DEFAULT_WEIGHTS, SECRET_KEY, CORS_ORIGINS, ADMIN_USERNAME/PASSWORD.
+- App factory pattern:
+  - Create create_app(config_name) to make testing/production easier; load engine based on config.
+
+Phase 2 — Persistence and APIs (this week)
+- Database:
+  - Start with SQLite in dev, move to Postgres in prod. Use SQLAlchemy models: Candidate, Internship, Application, Settings.
+  - Migrations with Alembic.
+- API expansion:
+  - Candidates: GET/POST/PUT/DELETE; dedupe by email; validation with Pydantic/Marshmallow.
+  - Internships: GET/POST/PUT/DELETE; load from CSV into DB, not memory.
+  - Settings: GET/PUT for weights and language; engine reads weights dynamically.
+  - Analytics: compute from DB (sector distribution, location distribution, education distribution, diversity rate). Optionally cache.
+
+Phase 3 — Security (this week)
+- Authentication:
+  - Simple session-based admin login or token-based auth for admin routes (/admin and /api/* that mutate).
+- CORS and headers:
+  - Restrict CORS to your frontend domain(s).
+- Input validation:
+  - Validate request body schemas and types.
+- Logging:
+  - Structured logging with log levels; request logging; error logging without PII.
+
+Phase 4 — Frontend integration (next)
+- Admin dashboard:
+  - Wire charts to /api/analytics.
+  - Implement add/edit/delete candidates and internships using modals and APIs.
+  - Implement weights save/load and apply.
+- i18n:
+  - Add a language selector; fetch /api/translations/<lang>; update DOM texts based on translation keys.
+  - Or perform server-side rendering with render_template using language_support.get_text.
+
+Phase 5 — ML matching improvements (next)
+- Skills:
+  - Keep TF-IDF but add a synonyms/alias map (e.g., “ML” ~ “Machine Learning”; “JS” ~ “JavaScript”).
+  - Optionally use sentence embeddings (e.g., sentence-transformers) for semantic matching if allowed.
+- Cold-start and robustness:
+  - Fallback to overlap-based matching when TF-IDF returns very low similarity or skills are missing.
+- Weight tuning:
+  - Make weights dynamic per sector or learn weights from feedback (if you collect accept/decline data).
+- Evaluation:
+  - Add offline tests and metrics: top-k accuracy, NDCG, coverage, fairness metrics.
+
+Phase 6 — Observability and deployment
+- Monitoring:
+  - Add health/metrics endpoints (/health, /metrics).
+  - Integrate Sentry/Rollbar for error tracking; Prometheus + Grafana for metrics if desired.
+- Deployment:
+  - Gunicorn with multiple workers (4) behind Nginx; ensure shared DB (in-memory lists won’t work with multi-workers).
+  - Dockerfile and containerized deployment; CI pipeline (GitHub Actions).
+
+Concrete Fixes and Snippets
+1) Fix CSV loader and TF-IDF index mapping (self_test.py)
+- Honor the filepath and map matrix rows to list indices.
+
+def load_internship_data_from_csv(self, filepath: str):
+    df = pd.read_csv(filepath)
+    self.internship_data = []
+    skill_texts = []
+
+    for idx, (_, row) in enumerate(df.iterrows()):
+        skills = ast.literal_eval(row['skills_required']) if isinstance(row['skills_required'], str) else []
+        internship = {
+            'id': int(row['id']),
+            'title': row['title'],
+            'company': row['company'],
+            'sector': str(row['sector']).strip().lower(),
+            'location': str(row['location']).strip().lower(),
+            'skills_required': skills,
+            'education_level': row['education_level'],
+            'capacity': int(row['capacity']),
+            'duration_months': int(row['duration_months']),
+            'stipend': int(row['stipend']),
+            'rural_friendly': bool(row['rural_friendly']),
+            'diversity_focused': bool(row['diversity_focused']),
+            '_tfidf_index': idx,  # map to TF-IDF row
+        }
+        self.internship_data.append(internship)
+        skill_texts.append(' '.join(skills).lower())
+
+    self.skill_matrix = self.vectorizer.fit_transform(skill_texts) if skill_texts else None
+
+def calculate_skill_match_score(self, candidate_skills, internship):
+    if not candidate_skills or not internship['skills_required'] or self.skill_matrix is None:
+        return 0.0
+    candidate_text = ' '.join(candidate_skills).lower()
+    idx = internship.get('_tfidf_index')
+    if idx is None:
+        return 0.0
+    internship_vector = self.skill_matrix[idx]
+    candidate_vector = self.vectorizer.transform([candidate_text])
+    return float(cosine_similarity(candidate_vector, internship_vector)[0][0])
+
+2) Fix Admin showSection event bug (admin_dashboard.html)
+- Pass the element or the event.
+
+<ul class="nav flex-column">
+  <li class="nav-item">
+    <a class="nav-link active" href="#dashboard" onclick="showSection('dashboard', this)">
+      <i class="fas fa-tachometer-alt"></i> Dashboard
+    </a>
+  </li>
+  ...
+</ul>
+
+function showSection(sectionName, el) {
+  document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+  document.getElementById(sectionName + '-section').style.display = 'block';
+  if (el) el.classList.add('active');
+  if (sectionName === 'candidates') loadCandidates();
+  else if (sectionName === 'internships') loadInternships();
+  else if (sectionName === 'analytics') loadAnalytics();
+}
+
+3) Sanitize dynamic HTML (index.html)
+- Use helper to escape text content, or build via DOM nodes.
+
+function escapeHtml(str) {
+  return str.replace(/[&<>"'`=\/]/g, s => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'
+  }[s]));
+}
+
+Then wrap dynamic insertions like:
+${escapeHtml(internship.company)}
+${escapeHtml(internship.title)}
+...
+${internship.skills_required.map(s => `<span class="skill-tag">${escapeHtml(s)}</span>`).join('')}
+
+4) Fix start.py browser URL
+- Change to 5000 or env var.
+
+port = os.environ.get('PORT', '5000')
+...
+webbrowser.open(f'http://localhost:{port}')
+
+5) Add settings endpoints and weight application
+- Backend (app.py): store weights in-memory or DB and apply in engine.get_recommendations.
+
+weights = {'skill': 0.3, 'location': 0.2, 'education': 0.2, 'sector': 0.15, 'diversity': 0.15}
+@app.route('/api/settings/weights', methods=['GET', 'PUT'])
+def settings_weights():
+    global weights
+    if request.method == 'GET':
+        return jsonify({'success': True, 'weights': weights})
+    data = request.get_json() or {}
+    # validate that sum <= 1 and each in [0,1]
+    total = sum(data.values())
+    if any(v < 0 for v in data.values()) or total == 0:
+        return jsonify({'error': 'Invalid weights'}), 400
+    weights = data
+    return jsonify({'success': True, 'weights': weights})
+
+Then modify engine.get_recommendations to accept weights as param.
+
+6) Integrate analytics in Admin
+- Call /api/analytics and populate charts with real data. Replace static datasets.
+
+7) Restrict CORS
+- Only allow your domain or localhost in dev.
+
+from flask_cors import CORS
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5000"]}})
+
+8) Switch to a single app (remove dummy_app duplication)
+- Keep app.py; add config to choose engine mode; delete dummy_app.py to avoid confusion.
+
+9) Consistent candidate schema and optional email
+- Add email to index form or treat it as optional; standardize API across GET/POST.
+
+Roadmap (2-week sprint suggestion)
+Day 1–2
+- Fix CSV loader, TF-IDF mapping, start.py port, admin event bug, sanitize UI.
+- Add environment config, engine mode toggle.
+
+Day 3–5
+- Introduce SQLAlchemy + SQLite or Postgres.
+- Implement models and CRUD for Candidates/Internships.
+- Wire admin candidates/internships to APIs.
+
+Day 6–7
+- Add Settings endpoint; wire dashboard weights sliders.
+- Integrate analytics endpoint with real charts.
+
+Day 8–10
+- Authentication for admin (basic session login or JWT).
+- Restrict CORS; add schema validation with Pydantic (or Marshmallow).
+- Unit/integration tests with pytest; seed test data.
+
+Day 11–14
+- i18n integration in UI; language selector and server translations.
+- ML enhancements: synonyms table for skills, fallback behavior.
+- Observability: logging, health endpoints, error tracking.
+
+Open Questions (to align decisions)
+- Do you want email in the candidate flow for deduplication? If yes, I’ll add it to /candidate form and unify POST handling.
+- What’s the expected source of internships in production? CSV uploads, manual entry via Admin, or integration with PM Internship Portal API?
+- Any immediate authentication method preference for /admin (session vs JWT vs SSO)?
+- Are we okay introducing a DB now (SQLite locally, Postgres in prod), or do you prefer to keep file-based storage for a while?
+- Which languages beyond en/hi/ta should we queue next?
+
+Bottom Line
+- You’ve built a strong prototype with a clean UX and reasonable matching foundation. To call it “production-ready,” we need to unify engines, fix the real bugs (CSV path, TF-IDF indexing, admin JS, port), secure the admin/API, move to a real database, wire analytics and settings to the backend, and integrate i18n into the UI. None of this is scary—most are tactical refactors and wiring work.
+
+If you want, I can start by:
+- Patching self_test.py (CSV + TF-IDF index),
+- Fixing start.py and admin JS,
+- Adding /api/settings/weights and integrating them into the engine,
+- Wiring admin charts to /api/analytics.
+
+Say the word, and I’ll draft the exact PR-style diffs for each change.

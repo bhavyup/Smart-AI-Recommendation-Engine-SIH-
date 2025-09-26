@@ -1,0 +1,201 @@
+id,title,company,sector,location,skills_required,education_level,capacity,duration_months,stipend,rural_friendly,diversity_focused
+1,Software Development Intern,MediCare Labs Pvt Ltd,Engineering,Hyderabad,"['Mechanics', 'Thermodynamics', 'MATLAB', 'AutoCAD']",PhD,4,4,20000,False,False
+2,Mechanical Engineer Intern,BuildCorp Pvt Ltd,Engineering,Mumbai,"['Thermodynamics', 'AutoCAD', 'Mechanics', 'MATLAB']",PhD,2,4,20000,True,False
+3,Marketing Intern,ThinkTank Pvt Ltd,Design,Delhi,"['Figma', 'Photoshop', 'UI/UX', 'Illustrator']",Bachelor,6,6,12000,False,False
+4,Graphic Design Intern,BuildCorp Pvt Ltd,Consulting,Delhi,"['Market Research', 'Strategy', 'Problem Solving', 'Client Communication']",Diploma,10,4,12000,False,False
+5,Software Development Intern,FinWorld Pvt Ltd,Marketing,Bangalore,"['Social Media', 'SEO', 'Content Writing', 'Digital Marketing']",PhD,4,4,20000,False,False
+6,HR Intern,Humanify Pvt Ltd,Human Resources,Mumbai,"['Employee Relations', 'Recruitment', 'Onboarding', 'HRIS']",Master,5,6,20000,False,False
+7,Business Analyst Intern,FinWorld Pvt Ltd,Finance,Hyderabad,"['Accounting', 'Financial Analysis', 'PowerBI', 'Excel']",Bachelor,6,3,8000,True,False
+8,Marketing Intern,ThinkTank Pvt Ltd,Consulting,Chennai,"['Problem Solving', 'Market Research', 'Client Communication', 'Strategy']",Bachelor,2,4,20000,False,True
+9,Business Analyst Intern,TechNova Pvt Ltd,Education,Mumbai,"['Assessment', 'Curriculum Design', 'Pedagogy', 'Teaching']",Bachelor,3,3,18000,False,True
+10,Civil Engineer Intern,MarketGurus Pvt Ltd,Marketing,Chennai,"['Digital Marketing', 'Content Writing', 'SEO', 'Social Media']",Bachelor,10,6,15000,False,True
+11,Data Analyst Intern,TechNova Pvt Ltd,Education,Mumbai,"['Curriculum Design', 'Pedagogy', 'Assessment', 'Teaching']",Master,9,6,12000,False,False
+12,Business Analyst Intern,MarketGurus Pvt Ltd,Human Resources,Hyderabad,"['Onboarding', 'Employee Relations', 'Recruitment', 'HRIS']",PhD,10,4,10000,True,True
+13,Mechanical Engineer Intern,TechNova Pvt Ltd,Marketing,Pune,"['Content Writing', 'Social Media', 'Digital Marketing', 'SEO']",Master,9,3,20000,False,False
+14,HR Intern,FinWorld Pvt Ltd,Technology,Pune,"['Python', 'React', 'SQL', 'JavaScript']",PhD,1,6,15000,False,False
+15,HR Intern,Humanify Pvt Ltd,Research,Bangalore,"['Survey Design', 'Report Writing', 'Statistical Analysis', 'Data Collection']",Master,8,6,12000,True,False
+16,Marketing Intern,MarketGurus Pvt Ltd,Education,Hyderabad,"['Teaching', 'Pedagogy', 'Curriculum Design', 'Assessment']",Master,3,5,12000,True,False
+17,Mechanical Engineer Intern,BuildCorp Pvt Ltd,Education,Kolkata,"['Pedagogy', 'Curriculum Design', 'Teaching', 'Assessment']",PhD,2,4,20000,True,True
+18,Graphic Design Intern,ThinkTank Pvt Ltd,Finance,Mumbai,"['PowerBI', 'Excel', 'Financial Analysis', 'Accounting']",Bachelor,6,3,12000,False,False
+19,Business Analyst Intern,ConsultEase Pvt Ltd,Design,Bangalore,"['Illustrator', 'UI/UX', 'Photoshop', 'Figma']",PhD,5,5,18000,False,False
+20,Marketing Intern,TechNova Pvt Ltd,Marketing,Delhi,"['Digital Marketing', 'Social Media', 'Content Writing', 'SEO']",Master,9,6,10000,True,True
+21,Business Analyst Intern,DesignX Pvt Ltd,Finance,Bangalore,"['Financial Analysis', 'PowerBI', 'Accounting', 'Excel']",Diploma,9,5,8000,False,False
+22,Data Analyst Intern,MarketGurus Pvt Ltd,Human Resources,Delhi,"['HRIS', 'Recruitment', 'Employee Relations', 'Onboarding']",Master,2,6,12000,False,False
+23,HR Intern,ThinkTank Pvt Ltd,Consulting,Pune,"['Problem Solving', 'Strategy', 'Client Communication', 'Market Research']",PhD,5,4,20000,True,True
+24,Graphic Design Intern,EduNext Pvt Ltd,Human Resources,Chennai,"['Onboarding', 'HRIS', 'Employee Relations', 'Recruitment']",Diploma,1,5,20000,False,False
+25,Data Analyst Intern,ConsultEase Pvt Ltd,Healthcare,Hyderabad,"['Python', 'Medical Knowledge', 'Data Analysis', 'Research']",Bachelor,3,6,15000,False,True
+26,Civil Engineer Intern,FinWorld Pvt Ltd,Human Resources,Ahmedabad,"['Employee Relations', 'Onboarding', 'Recruitment', 'HRIS']",PhD,6,6,8000,False,False
+27,Software Development Intern,ThinkTank Pvt Ltd,Marketing,Ahmedabad,"['SEO', 'Content Writing', 'Social Media', 'Digital Marketing']",PhD,2,3,18000,True,False
+28,Software Development Intern,TechNova Pvt Ltd,Consulting,Hyderabad,"['Market Research', 'Problem Solving', 'Client Communication', 'Strategy']",Diploma,7,4,20000,False,True
+29,Healthcare Research Intern,ThinkTank Pvt Ltd,Design,Pune,"['UI/UX', 'Photoshop', 'Figma', 'Illustrator']",Master,5,3,10000,False,False
+30,Healthcare Research Intern,FinWorld Pvt Ltd,Marketing,Bangalore,"['Digital Marketing', 'SEO', 'Content Writing', 'Social Media']",PhD,7,5,20000,False,True
+31,Civil Engineer Intern,DesignX Pvt Ltd,Research,Ahmedabad,"['Report Writing', 'Survey Design', 'Statistical Analysis', 'Data Collection']",PhD,3,4,12000,False,True
+32,Healthcare Research Intern,DesignX Pvt Ltd,Engineering,Hyderabad,"['AutoCAD', 'MATLAB', 'Thermodynamics', 'Mechanics']",Bachelor,3,6,8000,True,True
+33,Graphic Design Intern,MediCare Labs Pvt Ltd,Technology,Chennai,"['JavaScript', 'SQL', 'React', 'Python']",Bachelor,10,6,10000,False,False
+34,Data Analyst Intern,ThinkTank Pvt Ltd,Education,Hyderabad,"['Pedagogy', 'Teaching', 'Curriculum Design', 'Assessment']",Bachelor,1,4,20000,True,False
+35,Graphic Design Intern,DesignX Pvt Ltd,Research,Mumbai,"['Survey Design', 'Statistical Analysis', 'Data Collection', 'Report Writing']",PhD,3,6,8000,True,False
+36,Healthcare Research Intern,FinWorld Pvt Ltd,Finance,Delhi,"['PowerBI', 'Financial Analysis', 'Accounting', 'Excel']",Master,7,6,12000,True,True
+37,Data Analyst Intern,DesignX Pvt Ltd,Consulting,Chennai,"['Client Communication', 'Strategy', 'Market Research', 'Problem Solving']",Master,3,4,18000,True,True
+38,HR Intern,FinWorld Pvt Ltd,Marketing,Mumbai,"['SEO', 'Content Writing', 'Digital Marketing', 'Social Media']",PhD,6,5,15000,True,False
+39,Software Development Intern,ThinkTank Pvt Ltd,Human Resources,Ahmedabad,"['Recruitment', 'Onboarding', 'Employee Relations', 'HRIS']",Bachelor,2,6,8000,True,True
+40,Marketing Intern,FinWorld Pvt Ltd,Engineering,Hyderabad,"['Thermodynamics', 'MATLAB', 'AutoCAD', 'Mechanics']",Bachelor,2,4,12000,True,True
+41,Civil Engineer Intern,ThinkTank Pvt Ltd,Finance,Kolkata,"['Financial Analysis', 'Accounting', 'PowerBI', 'Excel']",Bachelor,1,6,12000,False,False
+42,HR Intern,ThinkTank Pvt Ltd,Engineering,Delhi,"['AutoCAD', 'Thermodynamics', 'MATLAB', 'Mechanics']",Diploma,4,4,10000,False,False
+43,Mechanical Engineer Intern,DesignX Pvt Ltd,Design,Kolkata,"['Photoshop', 'Illustrator', 'Figma', 'UI/UX']",Diploma,4,3,20000,True,False
+44,Software Development Intern,MarketGurus Pvt Ltd,Healthcare,Ahmedabad,"['Python', 'Data Analysis', 'Research', 'Medical Knowledge']",Diploma,6,6,10000,True,True
+45,Healthcare Research Intern,DesignX Pvt Ltd,Engineering,Hyderabad,"['MATLAB', 'Mechanics', 'AutoCAD', 'Thermodynamics']",Bachelor,4,4,12000,True,False
+46,Mechanical Engineer Intern,ConsultEase Pvt Ltd,Education,Hyderabad,"['Teaching', 'Assessment', 'Pedagogy', 'Curriculum Design']",Bachelor,7,5,20000,False,True
+47,Finance Intern,Humanify Pvt Ltd,Engineering,Hyderabad,"['Thermodynamics', 'MATLAB', 'Mechanics', 'AutoCAD']",Diploma,4,6,12000,False,True
+48,Business Analyst Intern,FinWorld Pvt Ltd,Education,Mumbai,"['Pedagogy', 'Teaching', 'Assessment', 'Curriculum Design']",Bachelor,7,6,20000,False,True
+49,Mechanical Engineer Intern,EduNext Pvt Ltd,Consulting,Mumbai,"['Client Communication', 'Problem Solving', 'Strategy', 'Market Research']",PhD,5,5,8000,True,True
+50,Marketing Intern,TechNova Pvt Ltd,Finance,Kolkata,"['Excel', 'Financial Analysis', 'Accounting', 'PowerBI']",Bachelor,9,6,12000,False,True
+51,Business Analyst Intern,EduNext Pvt Ltd,Education,Delhi,"['Assessment', 'Pedagogy', 'Teaching', 'Curriculum Design']",PhD,7,4,8000,False,False
+52,Healthcare Research Intern,ThinkTank Pvt Ltd,Research,Pune,"['Data Collection', 'Statistical Analysis', 'Survey Design', 'Report Writing']",PhD,2,3,18000,True,False
+53,Business Analyst Intern,EduNext Pvt Ltd,Education,Mumbai,"['Pedagogy', 'Teaching', 'Assessment', 'Curriculum Design']",PhD,3,5,18000,True,True
+54,HR Intern,BuildCorp Pvt Ltd,Consulting,Ahmedabad,"['Strategy', 'Market Research', 'Problem Solving', 'Client Communication']",Diploma,9,6,10000,True,True
+55,Civil Engineer Intern,MarketGurus Pvt Ltd,Human Resources,Pune,"['HRIS', 'Recruitment', 'Employee Relations', 'Onboarding']",Master,9,3,18000,False,True
+56,Graphic Design Intern,ConsultEase Pvt Ltd,Engineering,Chennai,"['MATLAB', 'AutoCAD', 'Thermodynamics', 'Mechanics']",Master,6,4,18000,False,True
+57,Software Development Intern,ConsultEase Pvt Ltd,Education,Kolkata,"['Curriculum Design', 'Teaching', 'Pedagogy', 'Assessment']",PhD,9,4,18000,False,False
+58,Healthcare Research Intern,MediCare Labs Pvt Ltd,Healthcare,Hyderabad,"['Research', 'Data Analysis', 'Medical Knowledge', 'Python']",Diploma,1,6,20000,False,False
+59,Graphic Design Intern,Humanify Pvt Ltd,Research,Bangalore,"['Survey Design', 'Report Writing', 'Statistical Analysis', 'Data Collection']",Diploma,6,4,10000,False,False
+60,HR Intern,TechNova Pvt Ltd,Healthcare,Pune,"['Python', 'Data Analysis', 'Medical Knowledge', 'Research']",Diploma,8,4,20000,True,False
+61,Business Analyst Intern,ThinkTank Pvt Ltd,Research,Kolkata,"['Data Collection', 'Survey Design', 'Report Writing', 'Statistical Analysis']",Diploma,3,4,15000,False,False
+62,Healthcare Research Intern,ThinkTank Pvt Ltd,Technology,Pune,"['React', 'Python', 'SQL', 'JavaScript']",Master,2,3,20000,False,True
+63,Finance Intern,BuildCorp Pvt Ltd,Design,Ahmedabad,"['Figma', 'Photoshop', 'Illustrator', 'UI/UX']",Bachelor,5,6,18000,True,True
+64,Finance Intern,ThinkTank Pvt Ltd,Healthcare,Hyderabad,"['Data Analysis', 'Research', 'Python', 'Medical Knowledge']",Bachelor,5,6,8000,True,True
+65,Business Analyst Intern,BuildCorp Pvt Ltd,Research,Kolkata,"['Data Collection', 'Statistical Analysis', 'Survey Design', 'Report Writing']",Diploma,9,5,20000,False,False
+66,Marketing Intern,TechNova Pvt Ltd,Research,Chennai,"['Data Collection', 'Report Writing', 'Statistical Analysis', 'Survey Design']",Master,3,3,18000,False,True
+67,Civil Engineer Intern,MediCare Labs Pvt Ltd,Technology,Bangalore,"['SQL', 'React', 'Python', 'JavaScript']",Master,5,6,20000,True,False
+68,Graphic Design Intern,BuildCorp Pvt Ltd,Healthcare,Delhi,"['Data Analysis', 'Python', 'Medical Knowledge', 'Research']",Bachelor,4,4,8000,True,False
+69,Finance Intern,ThinkTank Pvt Ltd,Engineering,Ahmedabad,"['AutoCAD', 'MATLAB', 'Mechanics', 'Thermodynamics']",Master,4,5,15000,True,True
+70,Business Analyst Intern,Humanify Pvt Ltd,Design,Delhi,"['Photoshop', 'Illustrator', 'Figma', 'UI/UX']",Master,3,4,8000,True,True
+71,Graphic Design Intern,Humanify Pvt Ltd,Engineering,Delhi,"['Mechanics', 'Thermodynamics', 'AutoCAD', 'MATLAB']",Master,5,3,15000,False,True
+72,Mechanical Engineer Intern,ConsultEase Pvt Ltd,Education,Hyderabad,"['Pedagogy', 'Curriculum Design', 'Assessment', 'Teaching']",Master,5,3,12000,False,True
+73,Software Development Intern,MarketGurus Pvt Ltd,Human Resources,Delhi,"['Employee Relations', 'Recruitment', 'Onboarding', 'HRIS']",Bachelor,10,4,12000,False,False
+74,Software Development Intern,BuildCorp Pvt Ltd,Education,Pune,"['Assessment', 'Pedagogy', 'Curriculum Design', 'Teaching']",Master,7,6,15000,True,False
+75,Graphic Design Intern,ThinkTank Pvt Ltd,Technology,Pune,"['SQL', 'JavaScript', 'Python', 'React']",Bachelor,3,3,15000,False,False
+76,Civil Engineer Intern,EduNext Pvt Ltd,Design,Delhi,"['Figma', 'UI/UX', 'Photoshop', 'Illustrator']",Master,7,4,10000,True,True
+77,Finance Intern,DesignX Pvt Ltd,Consulting,Kolkata,"['Problem Solving', 'Strategy', 'Client Communication', 'Market Research']",Master,5,4,20000,False,False
+78,Business Analyst Intern,FinWorld Pvt Ltd,Technology,Pune,"['JavaScript', 'SQL', 'React', 'Python']",Diploma,7,3,20000,False,True
+79,Finance Intern,Humanify Pvt Ltd,Technology,Ahmedabad,"['SQL', 'React', 'Python', 'JavaScript']",Diploma,5,3,12000,True,True
+80,Healthcare Research Intern,MediCare Labs Pvt Ltd,Engineering,Mumbai,"['AutoCAD', 'MATLAB', 'Mechanics', 'Thermodynamics']",Bachelor,7,4,15000,True,True
+81,Marketing Intern,ThinkTank Pvt Ltd,Education,Hyderabad,"['Teaching', 'Curriculum Design', 'Pedagogy', 'Assessment']",Bachelor,6,3,8000,False,False
+82,Marketing Intern,MediCare Labs Pvt Ltd,Consulting,Chennai,"['Market Research', 'Problem Solving', 'Client Communication', 'Strategy']",Bachelor,2,6,20000,False,True
+83,Mechanical Engineer Intern,DesignX Pvt Ltd,Technology,Bangalore,"['SQL', 'Python', 'JavaScript', 'React']",Master,8,5,18000,False,True
+84,Mechanical Engineer Intern,ConsultEase Pvt Ltd,Healthcare,Mumbai,"['Research', 'Data Analysis', 'Python', 'Medical Knowledge']",Master,9,6,8000,True,False
+85,Software Development Intern,ConsultEase Pvt Ltd,Marketing,Pune,"['SEO', 'Social Media', 'Content Writing', 'Digital Marketing']",Bachelor,5,4,20000,False,False
+86,Business Analyst Intern,ThinkTank Pvt Ltd,Technology,Bangalore,"['JavaScript', 'React', 'Python', 'SQL']",Diploma,9,6,8000,False,True
+87,Graphic Design Intern,Humanify Pvt Ltd,Education,Hyderabad,"['Pedagogy', 'Teaching', 'Assessment', 'Curriculum Design']",PhD,9,5,15000,True,True
+88,Marketing Intern,MediCare Labs Pvt Ltd,Marketing,Delhi,"['Social Media', 'Digital Marketing', 'Content Writing', 'SEO']",Bachelor,4,4,8000,True,True
+89,HR Intern,FinWorld Pvt Ltd,Healthcare,Ahmedabad,"['Data Analysis', 'Research', 'Medical Knowledge', 'Python']",PhD,5,3,12000,True,True
+90,HR Intern,TechNova Pvt Ltd,Design,Ahmedabad,"['Figma', 'UI/UX', 'Photoshop', 'Illustrator']",Master,1,3,12000,False,False
+91,Healthcare Research Intern,BuildCorp Pvt Ltd,Technology,Ahmedabad,"['React', 'JavaScript', 'SQL', 'Python']",PhD,6,3,10000,False,False
+92,Mechanical Engineer Intern,FinWorld Pvt Ltd,Healthcare,Bangalore,"['Python', 'Data Analysis', 'Research', 'Medical Knowledge']",PhD,4,4,12000,False,True
+93,Marketing Intern,MediCare Labs Pvt Ltd,Education,Mumbai,"['Pedagogy', 'Curriculum Design', 'Assessment', 'Teaching']",Diploma,4,4,15000,True,False
+94,Marketing Intern,FinWorld Pvt Ltd,Education,Kolkata,"['Curriculum Design', 'Pedagogy', 'Assessment', 'Teaching']",Diploma,2,5,20000,False,True
+95,HR Intern,DesignX Pvt Ltd,Technology,Mumbai,"['Python', 'SQL', 'JavaScript', 'React']",Diploma,2,6,15000,True,False
+96,Mechanical Engineer Intern,BuildCorp Pvt Ltd,Design,Delhi,"['Figma', 'Illustrator', 'UI/UX', 'Photoshop']",Bachelor,1,5,20000,False,True
+97,HR Intern,ConsultEase Pvt Ltd,Design,Pune,"['Illustrator', 'Photoshop', 'Figma', 'UI/UX']",Master,1,4,12000,True,False
+98,Business Analyst Intern,MediCare Labs Pvt Ltd,Human Resources,Delhi,"['Employee Relations', 'Recruitment', 'Onboarding', 'HRIS']",Diploma,4,3,20000,False,False
+99,HR Intern,FinWorld Pvt Ltd,Education,Pune,"['Assessment', 'Pedagogy', 'Curriculum Design', 'Teaching']",Bachelor,7,3,15000,False,True
+100,Business Analyst Intern,MarketGurus Pvt Ltd,Human Resources,Kolkata,"['Onboarding', 'Employee Relations', 'HRIS', 'Recruitment']",PhD,8,5,8000,True,False
+101,Software Development Intern,MediCare Labs Pvt Ltd,Technology,Hyderabad,"['React', 'Python', 'SQL', 'JavaScript']",Master,7,5,12000,True,False
+102,Healthcare Research Intern,EduNext Pvt Ltd,Finance,Delhi,"['PowerBI', 'Accounting', 'Excel', 'Financial Analysis']",Diploma,8,4,12000,True,True
+103,Mechanical Engineer Intern,DesignX Pvt Ltd,Design,Bangalore,"['Illustrator', 'UI/UX', 'Photoshop', 'Figma']",PhD,4,3,18000,False,True
+104,Data Analyst Intern,Humanify Pvt Ltd,Marketing,Bangalore,"['Digital Marketing', 'SEO', 'Content Writing', 'Social Media']",PhD,7,3,20000,True,True
+105,Healthcare Research Intern,Humanify Pvt Ltd,Finance,Delhi,"['Accounting', 'Financial Analysis', 'PowerBI', 'Excel']",Bachelor,2,5,18000,False,True
+106,Finance Intern,FinWorld Pvt Ltd,Healthcare,Delhi,"['Research', 'Data Analysis', 'Python', 'Medical Knowledge']",Bachelor,8,3,15000,False,False
+107,Software Development Intern,ThinkTank Pvt Ltd,Finance,Pune,"['Financial Analysis', 'Accounting', 'PowerBI', 'Excel']",Master,4,5,12000,True,False
+108,Graphic Design Intern,EduNext Pvt Ltd,Consulting,Bangalore,"['Client Communication', 'Strategy', 'Market Research', 'Problem Solving']",Diploma,8,3,8000,True,True
+109,Mechanical Engineer Intern,TechNova Pvt Ltd,Finance,Hyderabad,"['PowerBI', 'Accounting', 'Excel', 'Financial Analysis']",Diploma,8,4,8000,True,False
+110,Business Analyst Intern,DesignX Pvt Ltd,Marketing,Ahmedabad,"['SEO', 'Content Writing', 'Social Media', 'Digital Marketing']",Master,4,6,15000,True,False
+111,Software Development Intern,BuildCorp Pvt Ltd,Design,Delhi,"['Figma', 'Photoshop', 'Illustrator', 'UI/UX']",Master,9,3,8000,False,False
+112,HR Intern,MediCare Labs Pvt Ltd,Research,Kolkata,"['Survey Design', 'Report Writing', 'Statistical Analysis', 'Data Collection']",PhD,4,5,18000,True,False
+113,Civil Engineer Intern,MarketGurus Pvt Ltd,Engineering,Ahmedabad,"['MATLAB', 'AutoCAD', 'Mechanics', 'Thermodynamics']",Bachelor,1,5,18000,False,False
+114,Healthcare Research Intern,DesignX Pvt Ltd,Technology,Delhi,"['SQL', 'JavaScript', 'Python', 'React']",PhD,8,5,15000,False,False
+115,HR Intern,EduNext Pvt Ltd,Research,Hyderabad,"['Data Collection', 'Report Writing', 'Statistical Analysis', 'Survey Design']",Master,5,4,15000,False,False
+116,Healthcare Research Intern,TechNova Pvt Ltd,Research,Bangalore,"['Survey Design', 'Statistical Analysis', 'Data Collection', 'Report Writing']",Diploma,4,5,18000,False,True
+117,Software Development Intern,TechNova Pvt Ltd,Technology,Chennai,"['SQL', 'Python', 'React', 'JavaScript']",PhD,2,3,20000,False,True
+118,Business Analyst Intern,BuildCorp Pvt Ltd,Design,Mumbai,"['Figma', 'Illustrator', 'Photoshop', 'UI/UX']",PhD,1,3,15000,True,False
+119,Mechanical Engineer Intern,MediCare Labs Pvt Ltd,Education,Mumbai,"['Pedagogy', 'Curriculum Design', 'Teaching', 'Assessment']",Diploma,8,5,12000,True,True
+120,HR Intern,BuildCorp Pvt Ltd,Education,Chennai,"['Curriculum Design', 'Teaching', 'Assessment', 'Pedagogy']",Diploma,10,3,20000,True,False
+121,Healthcare Research Intern,ConsultEase Pvt Ltd,Technology,Kolkata,"['React', 'Python', 'JavaScript', 'SQL']",Diploma,7,4,20000,True,False
+122,HR Intern,TechNova Pvt Ltd,Human Resources,Hyderabad,"['HRIS', 'Onboarding', 'Recruitment', 'Employee Relations']",Bachelor,5,6,18000,False,False
+123,Business Analyst Intern,TechNova Pvt Ltd,Engineering,Mumbai,"['Thermodynamics', 'AutoCAD', 'MATLAB', 'Mechanics']",Master,9,3,12000,True,True
+124,Civil Engineer Intern,EduNext Pvt Ltd,Research,Pune,"['Data Collection', 'Survey Design', 'Report Writing', 'Statistical Analysis']",Diploma,5,3,15000,True,True
+125,Finance Intern,ConsultEase Pvt Ltd,Education,Mumbai,"['Teaching', 'Assessment', 'Pedagogy', 'Curriculum Design']",Diploma,9,5,18000,True,False
+126,Healthcare Research Intern,ConsultEase Pvt Ltd,Human Resources,Mumbai,"['Onboarding', 'HRIS', 'Employee Relations', 'Recruitment']",Diploma,6,6,20000,True,False
+127,Business Analyst Intern,MediCare Labs Pvt Ltd,Engineering,Chennai,"['AutoCAD', 'Thermodynamics', 'MATLAB', 'Mechanics']",PhD,6,5,20000,False,True
+128,Civil Engineer Intern,Humanify Pvt Ltd,Technology,Hyderabad,"['SQL', 'Python', 'React', 'JavaScript']",Diploma,6,6,20000,True,True
+129,Software Development Intern,FinWorld Pvt Ltd,Research,Chennai,"['Data Collection', 'Report Writing', 'Statistical Analysis', 'Survey Design']",Diploma,6,4,10000,False,False
+130,Finance Intern,Humanify Pvt Ltd,Education,Bangalore,"['Teaching', 'Assessment', 'Pedagogy', 'Curriculum Design']",Master,8,3,18000,True,True
+131,Finance Intern,Humanify Pvt Ltd,Education,Chennai,"['Assessment', 'Curriculum Design', 'Pedagogy', 'Teaching']",Bachelor,7,5,12000,False,False
+132,Data Analyst Intern,BuildCorp Pvt Ltd,Consulting,Chennai,"['Client Communication', 'Problem Solving', 'Market Research', 'Strategy']",Bachelor,6,4,8000,True,True
+133,Data Analyst Intern,FinWorld Pvt Ltd,Research,Kolkata,"['Report Writing', 'Statistical Analysis', 'Survey Design', 'Data Collection']",PhD,3,5,8000,False,True
+134,Healthcare Research Intern,TechNova Pvt Ltd,Research,Mumbai,"['Survey Design', 'Statistical Analysis', 'Report Writing', 'Data Collection']",Bachelor,10,3,10000,False,False
+135,Software Development Intern,DesignX Pvt Ltd,Design,Pune,"['UI/UX', 'Figma', 'Illustrator', 'Photoshop']",Bachelor,4,6,10000,True,True
+136,Software Development Intern,BuildCorp Pvt Ltd,Technology,Kolkata,"['Python', 'SQL', 'React', 'JavaScript']",Master,9,4,8000,False,False
+137,Mechanical Engineer Intern,Humanify Pvt Ltd,Design,Kolkata,"['UI/UX', 'Photoshop', 'Figma', 'Illustrator']",Bachelor,10,5,10000,False,True
+138,Civil Engineer Intern,TechNova Pvt Ltd,Human Resources,Kolkata,"['HRIS', 'Recruitment', 'Onboarding', 'Employee Relations']",PhD,9,4,10000,False,False
+139,Mechanical Engineer Intern,FinWorld Pvt Ltd,Design,Chennai,"['Photoshop', 'Figma', 'UI/UX', 'Illustrator']",PhD,8,5,12000,False,True
+140,Software Development Intern,BuildCorp Pvt Ltd,Education,Pune,"['Teaching', 'Assessment', 'Curriculum Design', 'Pedagogy']",Bachelor,2,4,12000,True,False
+141,Data Analyst Intern,TechNova Pvt Ltd,Finance,Delhi,"['PowerBI', 'Financial Analysis', 'Accounting', 'Excel']",Master,7,6,10000,True,True
+142,HR Intern,TechNova Pvt Ltd,Technology,Hyderabad,"['React', 'JavaScript', 'SQL', 'Python']",Bachelor,5,4,18000,True,True
+143,Business Analyst Intern,ConsultEase Pvt Ltd,Technology,Delhi,"['Python', 'React', 'SQL', 'JavaScript']",Bachelor,1,5,10000,False,True
+144,Graphic Design Intern,MediCare Labs Pvt Ltd,Research,Ahmedabad,"['Statistical Analysis', 'Data Collection', 'Report Writing', 'Survey Design']",Bachelor,8,3,20000,True,False
+145,Finance Intern,MarketGurus Pvt Ltd,Consulting,Bangalore,"['Client Communication', 'Market Research', 'Problem Solving', 'Strategy']",PhD,2,6,12000,True,False
+146,Mechanical Engineer Intern,Humanify Pvt Ltd,Consulting,Chennai,"['Client Communication', 'Market Research', 'Problem Solving', 'Strategy']",Diploma,7,5,8000,True,True
+147,Data Analyst Intern,BuildCorp Pvt Ltd,Research,Pune,"['Survey Design', 'Statistical Analysis', 'Report Writing', 'Data Collection']",Master,1,6,20000,False,False
+148,Software Development Intern,Humanify Pvt Ltd,Engineering,Chennai,"['AutoCAD', 'MATLAB', 'Mechanics', 'Thermodynamics']",Bachelor,9,3,15000,True,True
+149,Software Development Intern,DesignX Pvt Ltd,Healthcare,Ahmedabad,"['Python', 'Data Analysis', 'Medical Knowledge', 'Research']",PhD,5,6,10000,True,False
+150,Civil Engineer Intern,EduNext Pvt Ltd,Consulting,Pune,"['Problem Solving', 'Market Research', 'Client Communication', 'Strategy']",Master,3,5,15000,False,False
+151,Data Analyst Intern,TechNova Pvt Ltd,Design,Delhi,"['UI/UX', 'Figma', 'Photoshop', 'Illustrator']",Bachelor,6,3,18000,True,True
+152,Business Analyst Intern,DesignX Pvt Ltd,Consulting,Kolkata,"['Market Research', 'Client Communication', 'Strategy', 'Problem Solving']",PhD,4,5,8000,True,False
+153,Data Analyst Intern,EduNext Pvt Ltd,Engineering,Hyderabad,"['Thermodynamics', 'Mechanics', 'MATLAB', 'AutoCAD']",Master,9,5,10000,False,True
+154,Civil Engineer Intern,MarketGurus Pvt Ltd,Design,Kolkata,"['Photoshop', 'Figma', 'UI/UX', 'Illustrator']",PhD,6,3,20000,True,False
+155,HR Intern,ConsultEase Pvt Ltd,Consulting,Hyderabad,"['Problem Solving', 'Client Communication', 'Strategy', 'Market Research']",Diploma,9,5,8000,True,True
+156,HR Intern,Humanify Pvt Ltd,Human Resources,Bangalore,"['Employee Relations', 'HRIS', 'Recruitment', 'Onboarding']",Master,9,6,10000,False,False
+157,Graphic Design Intern,FinWorld Pvt Ltd,Marketing,Kolkata,"['Content Writing', 'Social Media', 'SEO', 'Digital Marketing']",PhD,7,3,18000,False,False
+158,Healthcare Research Intern,MarketGurus Pvt Ltd,Research,Mumbai,"['Statistical Analysis', 'Survey Design', 'Data Collection', 'Report Writing']",PhD,3,3,18000,False,True
+159,Civil Engineer Intern,BuildCorp Pvt Ltd,Marketing,Bangalore,"['Social Media', 'Digital Marketing', 'Content Writing', 'SEO']",Master,9,6,10000,False,False
+160,Marketing Intern,DesignX Pvt Ltd,Engineering,Kolkata,"['Thermodynamics', 'MATLAB', 'AutoCAD', 'Mechanics']",Bachelor,5,5,8000,True,False
+161,Civil Engineer Intern,FinWorld Pvt Ltd,Marketing,Chennai,"['Digital Marketing', 'Social Media', 'Content Writing', 'SEO']",PhD,9,6,15000,True,True
+162,Marketing Intern,DesignX Pvt Ltd,Engineering,Bangalore,"['Mechanics', 'Thermodynamics', 'MATLAB', 'AutoCAD']",PhD,9,4,18000,False,True
+163,Graphic Design Intern,MarketGurus Pvt Ltd,Research,Delhi,"['Survey Design', 'Statistical Analysis', 'Report Writing', 'Data Collection']",PhD,5,6,10000,True,False
+164,Healthcare Research Intern,FinWorld Pvt Ltd,Human Resources,Ahmedabad,"['Onboarding', 'Recruitment', 'HRIS', 'Employee Relations']",Master,4,3,15000,True,False
+165,Software Development Intern,DesignX Pvt Ltd,Research,Kolkata,"['Statistical Analysis', 'Data Collection', 'Report Writing', 'Survey Design']",Bachelor,5,6,15000,True,False
+166,Graphic Design Intern,FinWorld Pvt Ltd,Marketing,Mumbai,"['SEO', 'Social Media', 'Content Writing', 'Digital Marketing']",PhD,6,4,12000,True,False
+167,Graphic Design Intern,DesignX Pvt Ltd,Research,Delhi,"['Survey Design', 'Statistical Analysis', 'Data Collection', 'Report Writing']",Diploma,10,4,12000,True,True
+168,Data Analyst Intern,DesignX Pvt Ltd,Engineering,Chennai,"['Thermodynamics', 'MATLAB', 'AutoCAD', 'Mechanics']",PhD,6,3,20000,False,True
+169,Business Analyst Intern,BuildCorp Pvt Ltd,Healthcare,Kolkata,"['Data Analysis', 'Research', 'Python', 'Medical Knowledge']",Bachelor,4,6,20000,True,False
+170,Finance Intern,DesignX Pvt Ltd,Finance,Kolkata,"['Excel', 'PowerBI', 'Financial Analysis', 'Accounting']",Master,7,5,18000,True,False
+171,Finance Intern,ConsultEase Pvt Ltd,Engineering,Mumbai,"['AutoCAD', 'Thermodynamics', 'Mechanics', 'MATLAB']",Diploma,2,6,8000,False,True
+172,Business Analyst Intern,MarketGurus Pvt Ltd,Finance,Bangalore,"['PowerBI', 'Financial Analysis', 'Accounting', 'Excel']",PhD,9,4,8000,True,True
+173,Mechanical Engineer Intern,Humanify Pvt Ltd,Technology,Bangalore,"['React', 'SQL', 'JavaScript', 'Python']",PhD,6,5,12000,True,False
+174,Finance Intern,ThinkTank Pvt Ltd,Healthcare,Bangalore,"['Medical Knowledge', 'Data Analysis', 'Research', 'Python']",Bachelor,4,4,12000,True,False
+175,HR Intern,FinWorld Pvt Ltd,Design,Mumbai,"['UI/UX', 'Photoshop', 'Figma', 'Illustrator']",Diploma,2,6,20000,False,True
+176,Data Analyst Intern,MediCare Labs Pvt Ltd,Consulting,Pune,"['Client Communication', 'Strategy', 'Market Research', 'Problem Solving']",Diploma,6,5,18000,True,True
+177,Business Analyst Intern,EduNext Pvt Ltd,Design,Bangalore,"['Figma', 'UI/UX', 'Photoshop', 'Illustrator']",PhD,2,5,15000,False,True
+178,Graphic Design Intern,EduNext Pvt Ltd,Consulting,Bangalore,"['Market Research', 'Client Communication', 'Problem Solving', 'Strategy']",Master,9,6,15000,False,True
+179,Mechanical Engineer Intern,MarketGurus Pvt Ltd,Engineering,Chennai,"['MATLAB', 'Mechanics', 'Thermodynamics', 'AutoCAD']",Bachelor,8,4,10000,False,False
+180,Healthcare Research Intern,ConsultEase Pvt Ltd,Marketing,Delhi,"['Social Media', 'Content Writing', 'SEO', 'Digital Marketing']",Diploma,9,6,12000,False,True
+181,Finance Intern,EduNext Pvt Ltd,Healthcare,Chennai,"['Python', 'Research', 'Data Analysis', 'Medical Knowledge']",Bachelor,8,5,15000,False,False
+182,Data Analyst Intern,ConsultEase Pvt Ltd,Education,Chennai,"['Assessment', 'Pedagogy', 'Curriculum Design', 'Teaching']",Diploma,6,3,15000,True,True
+183,Healthcare Research Intern,Humanify Pvt Ltd,Technology,Kolkata,"['React', 'SQL', 'Python', 'JavaScript']",Master,3,6,10000,True,False
+184,Business Analyst Intern,TechNova Pvt Ltd,Healthcare,Delhi,"['Data Analysis', 'Research', 'Python', 'Medical Knowledge']",Diploma,5,4,15000,False,True
+185,Mechanical Engineer Intern,FinWorld Pvt Ltd,Human Resources,Pune,"['Onboarding', 'Employee Relations', 'HRIS', 'Recruitment']",Bachelor,7,3,10000,True,False
+186,Healthcare Research Intern,TechNova Pvt Ltd,Consulting,Chennai,"['Market Research', 'Client Communication', 'Strategy', 'Problem Solving']",Bachelor,9,3,20000,False,True
+187,Graphic Design Intern,Humanify Pvt Ltd,Research,Kolkata,"['Statistical Analysis', 'Survey Design', 'Data Collection', 'Report Writing']",Bachelor,10,4,20000,False,False
+188,HR Intern,TechNova Pvt Ltd,Marketing,Delhi,"['Social Media', 'SEO', 'Content Writing', 'Digital Marketing']",Bachelor,5,5,20000,True,False
+189,Finance Intern,Humanify Pvt Ltd,Education,Delhi,"['Teaching', 'Assessment', 'Curriculum Design', 'Pedagogy']",Master,10,5,10000,True,True
+190,Business Analyst Intern,FinWorld Pvt Ltd,Healthcare,Ahmedabad,"['Python', 'Medical Knowledge', 'Research', 'Data Analysis']",Master,10,3,12000,True,True
+191,Software Development Intern,DesignX Pvt Ltd,Marketing,Pune,"['Content Writing', 'SEO', 'Social Media', 'Digital Marketing']",Bachelor,9,6,12000,True,True
+192,Civil Engineer Intern,DesignX Pvt Ltd,Human Resources,Delhi,"['Recruitment', 'HRIS', 'Employee Relations', 'Onboarding']",Bachelor,3,4,12000,False,False
+193,Marketing Intern,FinWorld Pvt Ltd,Research,Pune,"['Statistical Analysis', 'Report Writing', 'Survey Design', 'Data Collection']",Diploma,1,5,12000,False,True
+194,Civil Engineer Intern,ThinkTank Pvt Ltd,Design,Hyderabad,"['Photoshop', 'Illustrator', 'Figma', 'UI/UX']",PhD,5,5,20000,False,False
+195,Healthcare Research Intern,ConsultEase Pvt Ltd,Technology,Ahmedabad,"['React', 'Python', 'JavaScript', 'SQL']",Bachelor,8,6,10000,False,True
+196,Software Development Intern,Humanify Pvt Ltd,Education,Delhi,"['Assessment', 'Curriculum Design', 'Pedagogy', 'Teaching']",PhD,10,3,8000,True,False
+197,Data Analyst Intern,MarketGurus Pvt Ltd,Engineering,Delhi,"['Thermodynamics', 'MATLAB', 'AutoCAD', 'Mechanics']",PhD,6,5,15000,True,True
+198,Finance Intern,MarketGurus Pvt Ltd,Marketing,Delhi,"['Social Media', 'SEO', 'Content Writing', 'Digital Marketing']",PhD,5,3,15000,False,False
+199,Data Analyst Intern,MediCare Labs Pvt Ltd,Marketing,Kolkata,"['SEO', 'Social Media', 'Content Writing', 'Digital Marketing']",Master,8,4,20000,True,True
+200,Marketing Intern,MediCare Labs Pvt Ltd,Design,Delhi,"['Figma', 'UI/UX', 'Illustrator', 'Photoshop']",Diploma,10,5,20000,True,True

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Admin Login • AI Smart Allocation Engine</title> 
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --bg-dark-1: #071128;
+            --bg-dark-2: #0b2a3a;
+            --accent-cyan: #0ea5e9;
+            --accent-green: #22c55e;
+            --accent-purple: #7c3aed;
+            --primary: #2563eb;
+            --primary-2: #1e40af;
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --muted: #94a3b8;
+            --noise-opacity: .06;
+            --overlay-opacity: .30;
+            --node-blur: 160px;
+            --drift: 30s;
+        }
+
+        /* Background */
+        .bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            min-height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--bg-dark-1), var(--bg-dark-2));
+            isolation: isolate;
+            pointer-events: none;
+        }
+
+        .bg-node {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(var(--node-blur));
+            mix-blend-mode: screen;
+            opacity: .98;
+            transform-origin: center;
+        }
+
+        .bg-node.node-a {
+            width: 1100px;
+            height: 700px;
+            left: -8%;
+            top: -6%;
+            background: radial-gradient(circle at 30% 30%, rgba(14, 165, 233, .95) 0%, rgba(14, 165, 233, .20) 35%, transparent 75%);
+            animation: driftA var(--drift) ease-in-out infinite;
+        }
+
+        .bg-node.node-b {
+            width: 1000px;
+            height: 900px;
+            right: -6%;
+            bottom: -8%;
+            background: radial-gradient(circle at 60% 60%, rgba(34, 197, 94, .95) 0%, rgba(34, 197, 94, .20) 38%, transparent 74%);
+            animation: driftB calc(var(--drift)*1.1) ease-in-out infinite;
+        }
+
+        .bg-node.node-c {
+            width: 700px;
+            height: 700px;
+            right: 6%;
+            top: 8%;
+            background: radial-gradient(circle at 50% 50%, rgba(124, 58, 237, .92) 0%, rgba(124, 58, 237, .18) 35%, transparent 75%);
+            animation: driftC calc(var(--drift)*0.9) ease-in-out infinite;
+        }
+
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0, 0, 0, var(--overlay-opacity)), rgba(0, 0, 0, 0.12));
+            backdrop-filter: blur(6px) saturate(1.05);
+            -webkit-backdrop-filter: blur(6px) saturate(1.05);
+            z-index: 1;
+        }
+
+        .bg-noise {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            opacity: var(--noise-opacity);
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='1' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.06'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23n)' /></svg>");
+            mix-blend-mode: overlay;
+            transform: scale(1.5);
+        }
+
+        @keyframes driftA {
+            0% {
+                transform: translate3d(-2%, -1%, 0) scale(1)
+            }
+
+            50% {
+                transform: translate3d(3%, 2%, 0) scale(1.02)
+            }
+
+            100% {
+                transform: translate3d(-2%, -1%, 0) scale(1)
+            }
+        }
+
+        @keyframes driftB {
+            0% {
+                transform: translate3d(1%, 2%, 0) scale(1)
+            }
+
+            50% {
+                transform: translate3d(-3%, -2%, 0) scale(1.03)
+            }
+
+            100% {
+                transform: translate3d(1%, 2%, 0) scale(1)
+            }
+        }
+
+        @keyframes driftC {
+            0% {
+                transform: translate3d(0%, -1%, 0) scale(1)
+            }
+
+            50% {
+                transform: translate3d(2%, 3%, 0) scale(1.01)
+            }
+
+            100% {
+                transform: translate3d(0%, -1%, 0) scale(1)
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+            .bg-node {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        /* Layout */
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .auth-wrap {
+            position: relative;
+            z-index: 5;
+            width: 100%;
+            max-width: 520px;
+            padding: 14px;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .brand-title {
+            font-weight: 900;
+            letter-spacing: .3px;
+            margin: 0;
+            background: linear-gradient(90deg, #93c5fd, #22c55e, #d8b4fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .brand-sub {
+            color: #cbd5e1;
+            margin-top: -2px;
+            font-size: .95rem;
+        }
+
+        .auth-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px) saturate(140%);
+            -webkit-backdrop-filter: blur(14px) saturate(140%);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 20px 18px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+        }
+
+        .form-control {
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.35);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            color: #e2e8f0;
+        }
+
+        .form-control::placeholder {
+            color: #94a3b8;
+        }
+
+        .form-control:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 .2rem rgba(96, 165, 250, 0.25);
+        }
+
+        .input-group-text {
+            background: rgba(15, 23, 42, 0.35);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            color: #cbd5e1;
+            border-radius: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-2));
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            padding: 10px 16px;
+        }
+
+        .btn-primary:disabled {
+            opacity: .75;
+        }
+
+        .links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .caps-hint {
+            display: none;
+            font-size: .85rem;
+            color: #fbbf24;
+            margin-top: 6px;
+        }
+
+        /* tiny footer badge */
+        .footnote {
+            text-align: center;
+            color: #94a3b8;
+            font-size: .85rem;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .auth-wrap {
+                padding: 10px;
+                max-width: 92vw;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background -->
+    <div class="bg" aria-hidden="true">
+        <div class="bg-node node-a"></div>
+        <div class="bg-node node-b"></div>
+        <div class="bg-node node-c"></div>
+        <div class="bg-overlay"></div>
+        <div class="bg-noise"></div>
+    </div>
+
+    <div class="auth-wrap">
+        <div class="brand">
+            <h2 class="brand-title"><i class="fas fa-brain"></i> AI Smart Allocation Engine</h2>
+            <div class="brand-sub">Admin Access</div>
+        </div>
+
+        <div class="auth-card">
+            <h5 class="mb-3 fw-bold"><i class="fas fa-shield-halved text-info"></i> Sign in to Admin</h5>
+            {% if error %}
+            <div class="alert alert-danger py-2">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('login', next=next) }}" id="loginForm" autocomplete="on">
+                <input type="hidden" name="next" value="{{ next }}">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input name="username" class="form-control" placeholder="admin" required autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-1">
+                    <label class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input id="pwd" name="password" type="password" class="form-control" placeholder="••••••••"
+                            required>
+                        <button type="button" class="input-group-text" id="togglePwd" title="Show/Hide password"
+                            style="cursor:pointer;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div id="capsHint" class="caps-hint"><i class="fas fa-triangle-exclamation"></i> Caps Lock is ON
+                    </div>
+                </div>
+
+                <div class="d-grid mt-3">
+                    <button id="btnLogin" class="btn btn-primary">
+                        <span class="me-1"><i class="fas fa-right-to-bracket"></i></span>
+                        <span class="btn-text">Sign in</span>
+                        <span class="spinner-border spinner-border-sm ms-2" id="btnSpin" style="display:none;"></span>
+                    </button>
+                </div>
+
+                <div class="links mt-3">
+                    <a class="btn btn-link btn-sm text-decoration-none" href="/"><i class="fas fa-home"></i> Home</a>
+                    <a class="btn btn-link btn-sm text-decoration-none" href="/candidate"><i
+                            class="fas fa-user-graduate"></i> Candidate Portal</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="footnote">Ministry of Corporate Affairs • PM Internship Scheme</div>
+    </div>
+
+    <script>
+        // Reload if coming from bfcache (after logout)
+        window.addEventListener('pageshow', function (e) { if (e.persisted) location.reload(); });
+
+        // Password visibility toggle
+        const pwd = document.getElementById('pwd');
+        const toggle = document.getElementById('togglePwd');
+        toggle?.addEventListener('click', () => {
+            const isPw = pwd.type === 'password';
+            pwd.type = isPw ? 'text' : 'password';
+            toggle.querySelector('i').classList.toggle('fa-eye');
+            toggle.querySelector('i').classList.toggle('fa-eye-slash');
+            pwd.focus();
+        });
+
+        // Caps Lock hint
+        const capsHint = document.getElementById('capsHint');
+        function checkCaps(e) {
+            const on = e.getModifierState && e.getModifierState('CapsLock');
+            if (on) { capsHint.style.display = 'block'; } else { capsHint.style.display = 'none'; }
+        }
+        pwd.addEventListener('keyup', checkCaps);
+        pwd.addEventListener('keydown', checkCaps);
+
+        // Submit UX
+        const form = document.getElementById('loginForm');
+        const btn = document.getElementById('btnLogin');
+        const spin = document.getElementById('btnSpin');
+        form.addEventListener('submit', () => {
+            btn.disabled = true;
+            spin.style.display = 'inline-block';
+            btn.querySelector('.btn-text').textContent = 'Signing in...';
+        });
+    </script>
+</body>
+
+</html>
