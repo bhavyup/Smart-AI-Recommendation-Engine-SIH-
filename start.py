@@ -40,10 +40,10 @@ def start_application():
     # Wait a moment then open browser
     time.sleep(3)
     try:
-        webbrowser.open('http://localhost:8888')
-    except:
-        print("Could not open browser automatically. Please visit http://localhost:8888")
-    
+        webbrowser.open('http://localhost:5000')
+    except e:
+        print("Could not open browser automatically. Please visit http://localhost:5000")
+
     # Start the Flask app
     try:
         subprocess.run([sys.executable, 'app.py'])

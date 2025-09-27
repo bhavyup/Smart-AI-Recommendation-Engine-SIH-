@@ -18,6 +18,9 @@ instance/
 data/*
 !data/internships.csv
 
-
+demo.py
+dummy_app.py
+GamePlan.txt
+self_test.py
 
 *.so
