@@ -1,3 +1,12 @@
+---
+title: Smart AI Recommendation Engine
+emoji: "🧠"
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # AI Smart Allocation Engine for PM Internship Scheme
 
 A comprehensive AI-powered system that intelligently matches candidates with internship opportunities based on skills, qualifications, location preferences, and sector interests, while incorporating affirmative action considerations.
