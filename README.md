@@ -1,12 +1,3 @@
----
-title: Smart AI Recommendation Engine
-emoji: "🧠"
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-pinned: false
----
-
 # Smart AI Recommendation Engine
 
 <p align="center"><strong>Enterprise-grade internship allocation intelligence for the PM Internship Scheme.</strong></p>
