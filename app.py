@@ -22,6 +22,8 @@ import time
 load_dotenv()
 
 app = Flask(__name__)
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
 CORS(app)
 Compress(app)
 
